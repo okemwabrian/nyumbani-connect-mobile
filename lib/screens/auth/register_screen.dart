@@ -1,34 +1,31 @@
 import 'package:flutter/material.dart';
+// We will import the dashboard so we can navigate to it after registering
+import '../worker_ui/worker_dashboard.dart';
 
 class RegisterScreen extends StatefulWidget {
-  final String initialRole; // <--- We added this to accept the role from the welcome screen
-
-  const RegisterScreen({super.key, required this.initialRole}); // Require it in the constructor
+  final String initialRole;
+  const RegisterScreen({super.key, required this.initialRole});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  // Controllers to capture user text input
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
-  late String _selectedRole; // <--- Changed this to 'late' since we set it in initState
+  late String _selectedRole;
   final List<String> _roles = ['Worker', 'Employer', 'Agent'];
-
   DateTime? _dateOfBirth;
   String _errorMessage = '';
 
   @override
   void initState() {
     super.initState();
-    // Initialize the dropdown with whatever role the user clicked on the Welcome screen!
     _selectedRole = widget.initialRole;
   }
 
-  // Clean up controllers when the screen is closed
   @override
   void dispose() {
     _nameController.dispose();
@@ -54,7 +51,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   void _submitRegistration() {
-    // Basic validation to ensure fields aren't empty
     if (_nameController.text.isEmpty || _phoneController.text.isEmpty || _passwordController.text.isEmpty) {
       setState(() => _errorMessage = 'Please fill in all fields.');
       return;
@@ -65,14 +61,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         setState(() => _errorMessage = 'Please select your Date of Birth.');
         return;
       }
-
       DateTime today = DateTime.now();
       int age = today.year - _dateOfBirth!.year;
-
-      if (today.month < _dateOfBirth!.month ||
-          (today.month == _dateOfBirth!.month && today.day < _dateOfBirth!.day)) {
-        age--;
-      }
+      if (today.month < _dateOfBirth!.month || (today.month == _dateOfBirth!.month && today.day < _dateOfBirth!.day)) age--;
 
       if (age < 18) {
         setState(() => _errorMessage = 'You must be at least 18 years old to register as a worker.');
@@ -80,94 +71,108 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
 
+    // HCI: Give immediate positive feedback, then route to the dashboard
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Success! Welcome, ${_nameController.text}'), backgroundColor: Colors.green),
+      const SnackBar(content: Text('Registration Successful!'), backgroundColor: Colors.green),
+    );
+
+    // If they registered as a worker, send them to the new Worker Dashboard
+    if (_selectedRole == 'Worker') {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => WorkerDashboard(workerName: _nameController.text)),
+      );
+    }
+  }
+
+  // Helper method for clean, consistent HCI text fields
+  InputDecoration _customInputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.grey.shade600),
+      filled: true,
+      fillColor: Colors.grey.shade50,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Create an Account')),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Text Fields for User Info
-            TextField(
-              controller: _nameController,
-              decoration: const InputDecoration(labelText: 'Full Name', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(labelText: 'Phone Number', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 15),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Password', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 25),
+      backgroundColor: Colors.grey.shade100, // Soft background to make the white card pop
+      appBar: AppBar(
+        title: const Text('Create Account'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: const Color(0xFF1E3A8A),
+      ),
+      body: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(24.0),
+          child: Card(
+            elevation: 4,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text('Join Nyumbani', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)), textAlign: TextAlign.center),
+                  const SizedBox(height: 8),
+                  const Text('Enter your details below to get started.', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
+                  const SizedBox(height: 30),
 
-            const Text('I am registering as a:', style: TextStyle(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
+                  TextField(controller: _nameController, decoration: _customInputDecoration('Full Name', Icons.person_outline)),
+                  const SizedBox(height: 16),
+                  TextField(controller: _phoneController, keyboardType: TextInputType.phone, decoration: _customInputDecoration('Phone Number', Icons.phone_outlined)),
+                  const SizedBox(height: 16),
+                  TextField(controller: _passwordController, obscureText: true, decoration: _customInputDecoration('Password', Icons.lock_outline)),
+                  const SizedBox(height: 24),
 
-            // Dropdown for Role Selection
-            DropdownButtonFormField<String>(
-              value: _selectedRole,
-              items: _roles.map((String role) {
-                return DropdownMenuItem(value: role, child: Text(role));
-              }).toList(),
-              onChanged: (String? newValue) {
-                setState(() {
-                  _selectedRole = newValue!;
-                  _errorMessage = '';
-                });
-              },
-              decoration: const InputDecoration(border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 20),
+                  const Text('Role', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
+                  const SizedBox(height: 8),
+                  DropdownButtonFormField<String>(
+                    value: _selectedRole,
+                    items: _roles.map((role) => DropdownMenuItem(value: role, child: Text(role))).toList(),
+                    onChanged: (val) => setState(() { _selectedRole = val!; _errorMessage = ''; }),
+                    decoration: _customInputDecoration('Select Role', Icons.work_outline),
+                  ),
+                  const SizedBox(height: 16),
 
-            // DOB picker for Workers
-            if (_selectedRole == 'Worker') ...[
-              ListTile(
-                title: Text(_dateOfBirth == null
-                    ? 'Select Date of Birth'
-                    : 'DOB: ${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}'),
-                trailing: const Icon(Icons.calendar_today),
-                shape: RoundedRectangleBorder(
-                  side: const BorderSide(color: Colors.grey),
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                onTap: _selectDateOfBirth,
+                  if (_selectedRole == 'Worker') ...[
+                    InkWell(
+                      onTap: _selectDateOfBirth,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                        decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(12), color: Colors.grey.shade50),
+                        child: Row(
+                          children: [
+                            Icon(Icons.cake_outlined, color: Colors.grey.shade600),
+                            const SizedBox(width: 12),
+                            Text(_dateOfBirth == null ? 'Select Date of Birth' : 'DOB: ${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}', style: TextStyle(fontSize: 16, color: _dateOfBirth == null ? Colors.grey.shade700 : Colors.black87)),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
+                  if (_errorMessage.isNotEmpty)
+                    Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)), child: Row(children: [const Icon(Icons.error_outline, color: Colors.red), const SizedBox(width: 8), Expanded(child: Text(_errorMessage, style: const TextStyle(color: Colors.red)))] )),
+
+                  const SizedBox(height: 24),
+                  ElevatedButton(
+                    onPressed: _submitRegistration,
+                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 2),
+                    child: const Text('Create Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ),
-              const SizedBox(height: 15),
-            ],
-
-            // Error Display
-            if (_errorMessage.isNotEmpty) ...[
-              Text(
-                _errorMessage,
-                style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 15),
-            ],
-
-            // Submit Button
-            ElevatedButton(
-              onPressed: _submitRegistration,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 15),
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Register', style: TextStyle(fontSize: 18)),
             ),
-          ],
+          ),
         ),
       ),
     );
