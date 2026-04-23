@@ -95,6 +95,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                   bottomRight: Radius.circular(30),
                 ),
               ),
+
               padding: const EdgeInsets.only(bottom: 30, top: 20),
               child: Column(
                 children: [

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-// We will import the dashboard so we can navigate to it after registering
 import '../worker_ui/worker_dashboard.dart';
+import '../employer_ui/employer_dashboard.dart'; // Import the new dashboard
 
 class RegisterScreen extends StatefulWidget {
   final String initialRole;
@@ -42,7 +42,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
       lastDate: DateTime.now(),
     );
 
-    if (picked != null && picked != _dateOfBirth) {
+    if (picked != null) {
       setState(() {
         _dateOfBirth = picked;
         _errorMessage = '';
@@ -71,108 +71,119 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
 
-    // HCI: Give immediate positive feedback, then route to the dashboard
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Registration Successful!'), backgroundColor: Colors.green),
-    );
-
-    // If they registered as a worker, send them to the new Worker Dashboard
+    // Routing Logic: Send them to the right dashboard!
     if (_selectedRole == 'Worker') {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => WorkerDashboard(workerName: _nameController.text)),
-      );
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => WorkerDashboard(workerName: _nameController.text)));
+    } else {
+      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => EmployerDashboard(userName: _nameController.text, role: _selectedRole)));
     }
   }
 
-  // Helper method for clean, consistent HCI text fields
+  // Stylish Input Decoration
   InputDecoration _customInputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: Colors.grey.shade600),
+      prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A)),
       filled: true,
-      fillColor: Colors.grey.shade50,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-      enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Color(0xFF1E3A8A), width: 2)),
+      fillColor: Colors.white,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+      focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: const BorderSide(color: Color(0xFFD97706), width: 2)),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey.shade100, // Soft background to make the white card pop
+      backgroundColor: const Color(0xFFF3F4F6), // Light grey background
       appBar: AppBar(
-        title: const Text('Create Account'),
         backgroundColor: Colors.transparent,
         elevation: 0,
         foregroundColor: const Color(0xFF1E3A8A),
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Card(
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            child: Padding(
+      body: SingleChildScrollView(
+        child: Column(
+          children: [
+            // Header
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('Create Account', style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A))),
+                  SizedBox(height: 10),
+                  Text('Fill in your details to join Nyumbani Connect.', style: TextStyle(fontSize: 16, color: Colors.grey)),
+                ],
+              ),
+            ),
+            const SizedBox(height: 30),
+
+            // Form Container
+            Container(
               padding: const EdgeInsets.all(24.0),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.only(topLeft: Radius.circular(40), topRight: Radius.circular(40)),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const Text('Join Nyumbani', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Color(0xFF1E3A8A)), textAlign: TextAlign.center),
-                  const SizedBox(height: 8),
-                  const Text('Enter your details below to get started.', style: TextStyle(color: Colors.grey), textAlign: TextAlign.center),
-                  const SizedBox(height: 30),
-
                   TextField(controller: _nameController, decoration: _customInputDecoration('Full Name', Icons.person_outline)),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   TextField(controller: _phoneController, keyboardType: TextInputType.phone, decoration: _customInputDecoration('Phone Number', Icons.phone_outlined)),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   TextField(controller: _passwordController, obscureText: true, decoration: _customInputDecoration('Password', Icons.lock_outline)),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 20),
 
-                  const Text('Role', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87)),
-                  const SizedBox(height: 8),
+                  // Role Dropdown
                   DropdownButtonFormField<String>(
                     value: _selectedRole,
                     items: _roles.map((role) => DropdownMenuItem(value: role, child: Text(role))).toList(),
                     onChanged: (val) => setState(() { _selectedRole = val!; _errorMessage = ''; }),
                     decoration: _customInputDecoration('Select Role', Icons.work_outline),
                   ),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
 
                   if (_selectedRole == 'Worker') ...[
                     InkWell(
                       onTap: _selectDateOfBirth,
-                      borderRadius: BorderRadius.circular(12),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
-                        decoration: BoxDecoration(border: Border.all(color: Colors.grey.shade300), borderRadius: BorderRadius.circular(12), color: Colors.grey.shade50),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 20),
+                        decoration: BoxDecoration(color: Colors.grey.shade50, borderRadius: BorderRadius.circular(15), border: Border.all(color: Colors.grey.shade200)),
                         child: Row(
                           children: [
-                            Icon(Icons.cake_outlined, color: Colors.grey.shade600),
-                            const SizedBox(width: 12),
-                            Text(_dateOfBirth == null ? 'Select Date of Birth' : 'DOB: ${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}', style: TextStyle(fontSize: 16, color: _dateOfBirth == null ? Colors.grey.shade700 : Colors.black87)),
+                            const Icon(Icons.cake_outlined, color: Color(0xFF1E3A8A)),
+                            const SizedBox(width: 15),
+                            Text(_dateOfBirth == null ? 'Select Date of Birth (Must be 18+)' : 'DOB: ${_dateOfBirth!.day}/${_dateOfBirth!.month}/${_dateOfBirth!.year}', style: TextStyle(fontSize: 16, color: _dateOfBirth == null ? Colors.grey.shade600 : Colors.black87)),
                           ],
                         ),
                       ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 20),
                   ],
 
                   if (_errorMessage.isNotEmpty)
-                    Container(padding: const EdgeInsets.all(12), decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(8)), child: Row(children: [const Icon(Icons.error_outline, color: Colors.red), const SizedBox(width: 8), Expanded(child: Text(_errorMessage, style: const TextStyle(color: Colors.red)))] )),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Text(_errorMessage, style: const TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                    ),
 
-                  const SizedBox(height: 24),
+                  // Submit Button
                   ElevatedButton(
                     onPressed: _submitRegistration,
-                    style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF1E3A8A), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)), elevation: 2),
-                    child: const Text('Create Account', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                    style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1E3A8A),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+                        elevation: 5
+                    ),
+                    child: const Text('Register Now', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                   ),
+                  const SizedBox(height: 40), // Extra padding for scrolling
                 ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
