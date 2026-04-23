@@ -1,87 +1,95 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-
 import 'screens/welcome_screen.dart';
-import 'screens/worker_ui/worker_dashboard.dart';
-import 'screens/employer_ui/employer_dashboard.dart';
 
 void main() {
-  runApp(const HomeManagerApp());
+  runApp(const NyumbaniApp());
 }
 
-class HomeManagerApp extends StatelessWidget {
-  const HomeManagerApp({super.key});
+class NyumbaniApp extends StatelessWidget {
+  const NyumbaniApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Nyumbani Connect',
       debugShowCheckedModeBanner: false,
+
+      // 🎨 GLOBAL THEME (YOUR COLORS)
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF1E3A8A)),
-        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFF2F3E6E),
+        ),
+
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Color(0xFF2F3E6E),
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+
+        elevatedButtonTheme: ElevatedButtonThemeData(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF2F3E6E),
+            foregroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
       ),
-      home: const AuthCheckScreen(), // 🔥 NEW
+
+      home: const SplashScreen(),
     );
   }
 }
 
-class AuthCheckScreen extends StatefulWidget {
-  const AuthCheckScreen({super.key});
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
 
   @override
-  State<AuthCheckScreen> createState() => _AuthCheckScreenState();
+  State<SplashScreen> createState() => _SplashScreenState();
 }
 
-class _AuthCheckScreenState extends State<AuthCheckScreen> {
+class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _checkLogin();
+    _goNext();
   }
 
-  Future<void> _checkLogin() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-    final role = prefs.getString('role'); // we’ll store this too
-
-    await Future.delayed(const Duration(seconds: 2)); // splash feel
+  Future<void> _goNext() async {
+    await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
 
-    if (token != null && role != null) {
-      // 🔥 Auto-route based on role
-      if (role == 'worker') {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => WorkerDashboard(workerName: 'User'),
-          ),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => EmployerDashboard(
-              userName: 'User',
-              role: role,
-            ),
-          ),
-        );
-      }
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-      );
-    }
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
+      backgroundColor: const Color(0xFF2F3E6E),
       body: Center(
-        child: CircularProgressIndicator(),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.home, color: Colors.white, size: 80),
+            SizedBox(height: 20),
+            Text(
+              "Nyumbani Connect",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

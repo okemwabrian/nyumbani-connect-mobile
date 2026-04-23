@@ -1,120 +1,223 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../widgets/app_drawer.dart';
 import 'auth/login_screen.dart';
 import 'auth/register_screen.dart';
 
-class WelcomeScreen extends StatelessWidget {
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  final PageController _controller = PageController(viewportFraction: 0.85);
+  int _current = 0;
+  Timer? _timer;
+
+  final List<Map<String, dynamic>> features = [
+    {"icon": Icons.verified, "title": "Verified Workers"},
+    {"icon": Icons.security, "title": "Safe Hiring"},
+    {"icon": Icons.location_on, "title": "Across All Counties"},
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+
+    _timer = Timer.periodic(const Duration(seconds: 4), (_) {
+      _current = (_current + 1) % features.length;
+
+      _controller.animateToPage(
+        _current,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E3A8A), // The deep blue from your design
+      drawer: AppDrawer(role: "guest"),      backgroundColor: const Color(0xFFF4F7F2),
+
+      appBar: AppBar(
+        title: const Text("Nyumbani Connect"),
+        centerTitle: true,
+      ),
+
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               const SizedBox(height: 20),
 
-              // Logo & Title area
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.favorite, color: Colors.amber, size: 32),
-                  const SizedBox(width: 10),
-                  const Text(
-                    'Nyumbani',
-                    style: TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 40),
-
-              // Hero Text
-              const Text(
-                'Trusted Connections for Better Homes',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white, fontSize: 26, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 15),
-              const Text(
-                'Connecting verified house managers with trusted agents and employers across Nairobi.',
-                textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.white70, fontSize: 16),
-              ),
-              const SizedBox(height: 40),
-
-              // Feature Cards (Horizontal Scroll for Mobile)
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
+              // 🔥 HERO TEXT
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
                   children: [
-                    _buildFeatureCard(
-                      icon: Icons.shield_outlined,
-                      iconColor: Colors.amber,
-                      title: 'Verified IDs',
-                      subtitle: 'All users verified with National ID',
+                    Text(
+                      "Find Trusted Help\nFor Your Home",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF2F3E6E),
+                      ),
                     ),
-                    const SizedBox(width: 15),
-                    _buildFeatureCard(
-                      icon: Icons.check_circle_outline,
-                      iconColor: Colors.greenAccent,
-                      title: 'Safe & Secure',
-                      subtitle: 'Your data is protected',
-                    ),
-                    const SizedBox(width: 15),
-                    _buildFeatureCard(
-                      icon: Icons.favorite,
-                      iconColor: Colors.pinkAccent,
-                      title: 'Empowering Women',
-                      subtitle: 'Building careers, building futures',
+                    SizedBox(height: 10),
+                    Text(
+                      "Connect with verified house managers, agents, and employers across Kenya.",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(color: Colors.black54),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 40),
 
-              // Get Started Section
-              const Text(
-                'Get Started',
-                style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 25),
 
-              // Card 1: House Manager
-              _buildRoleCard(
-                context,
-                title: 'I am a House Manager',
-                subtitle: 'Looking for trusted employment opportunities in Nairobi',
-                icon: Icons.account_circle_outlined,
-                buttonColor: const Color(0xFF2563EB), // Blue button
-                role: 'Worker',
-              ),
-              const SizedBox(height: 20),
+              // 🔥 FEATURE CARDS
+              SizedBox(
+                height: 140,
+                child: PageView.builder(
+                  controller: _controller,
+                  itemCount: features.length,
+                  itemBuilder: (context, index) {
+                    final item = features[index];
 
-              // Card 2: Agent/Employer
-              _buildRoleCard(
-                context,
-                title: 'I am an Agent/Employer',
-                subtitle: 'Connect with verified, trustworthy house managers',
-                icon: Icons.work_outline,
-                buttonColor: const Color(0xFFD97706), // Orange button
-                role: 'Employer', // You can change this based on how you want to route them
-              ),
-              const SizedBox(height: 30),
-
-              // Login Link
-              TextButton(
-                onPressed: () {
-                  Navigator.push(context, MaterialPageRoute(builder: (context) => const LoginScreen()));
-                },
-                child: const Text(
-                  'By registering, you agree to our terms of service\n\nAlready have an account? Login here',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.white70, fontSize: 14),
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 400),
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      decoration: BoxDecoration(
+                        color: index == _current
+                            ? const Color(0xFFA8C97F)
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.08),
+                            blurRadius: 8,
+                          )
+                        ],
+                      ),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            item["icon"],
+                            size: 36,
+                            color: const Color(0xFF2F3E6E),
+                          ),
+                          const SizedBox(height: 10),
+                          Text(
+                            item["title"],
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF2F3E6E),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
                 ),
               ),
+
+              const SizedBox(height: 25),
+
+              // 🔥 ACTION SECTION
+              Container(
+                padding: const EdgeInsets.all(20),
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                child: Column(
+                  children: [
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        "Get Started",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2F3E6E),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 20),
+
+                    _roleCard(
+                      context,
+                      icon: Icons.person,
+                      title: "House Manager",
+                      subtitle: "Find jobs near you",
+                      role: "worker",
+                    ),
+
+                    const SizedBox(height: 15),
+
+                    _roleCard(
+                      context,
+                      icon: Icons.business,
+                      title: "Employer / Agent",
+                      subtitle: "Hire trusted workers",
+                      role: "employer",
+                    ),
+
+                    const SizedBox(height: 25),
+
+                    // 🔥 REGISTER CTA
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const RegisterScreen(
+                                initialRole: "worker",
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text("Create Account"),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // 🔥 LOGIN CTA
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const LoginScreen(),
+                          ),
+                        );
+                      },
+                      child: const Text(
+                        "Already have an account? Login",
+                        style: TextStyle(color: Color(0xFF2F3E6E)),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
               const SizedBox(height: 20),
             ],
           ),
@@ -123,57 +226,57 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  // Helper widget for the top Feature Cards (Verified IDs, etc.)
-  Widget _buildFeatureCard({required IconData icon, required Color iconColor, required String title, required String subtitle}) {
-    return Container(
-      width: 160, // Fixed width so they scroll nicely
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1), // Translucent background to match your web design
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: iconColor, size: 36),
-          const SizedBox(height: 12),
-          Text(title, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.white70, fontSize: 12)),
-        ],
-      ),
-    );
-  }
+  Widget _roleCard(BuildContext context,
+      {required IconData icon,
+        required String title,
+        required String subtitle,
+        required String role}) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => RegisterScreen(initialRole: role),
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.all(18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.grey.shade200),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              radius: 25,
+              backgroundColor: const Color(0xFFA8C97F),
+              child: Icon(icon, color: const Color(0xFF2F3E6E)),
+            ),
+            const SizedBox(width: 15),
 
-  // Helper widget to build the white Role Selection cards
-  Widget _buildRoleCard(BuildContext context, {required String title, required String subtitle, required IconData icon, required Color buttonColor, required String role}) {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Column(
-        children: [
-          CircleAvatar(backgroundColor: Colors.blue.shade50, radius: 35, child: Icon(icon, size: 35, color: Colors.blue.shade800)),
-          const SizedBox(height: 15),
-          Text(title, style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue.shade900)),
-          const SizedBox(height: 10),
-          Text(subtitle, textAlign: TextAlign.center, style: const TextStyle(color: Colors.black54)),
-          const SizedBox(height: 20),
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(backgroundColor: buttonColor, foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 15)),
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context) => RegisterScreen(initialRole: role)));
-              },
-              child: Text(
-                'Register as ${title.replaceAll("I am a ", "").replaceAll("I am an ", "")}',
-                style: const TextStyle(fontSize: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2F3E6E),
+                    ),
+                  ),
+                  Text(
+                    subtitle,
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+                ],
               ),
             ),
-          )
-        ],
+
+            const Icon(Icons.arrow_forward_ios, size: 16),
+          ],
+        ),
       ),
     );
   }

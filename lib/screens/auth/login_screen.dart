@@ -4,7 +4,6 @@ import '../../services/auth_service.dart';
 import '../worker_ui/worker_dashboard.dart';
 import '../employer_ui/employer_dashboard.dart';
 
-
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -27,9 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   void _login() async {
     if (_phoneController.text.isEmpty || _passwordController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter phone and password')),
-      );
+      _showMessage("Enter phone and password");
       return;
     }
 
@@ -46,13 +43,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (result != null) {
         final role = result['role'];
         final phone = result['phone'];
-        final token = result['access']; // 🔥 JWT token
+        final token = result['access'];
 
-        // ✅ Save token locally
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
+        await prefs.setString('role', role);
 
-        // 🔥 ROLE-BASED ROUTING
         if (role == 'worker') {
           Navigator.pushReplacement(
             context,
@@ -60,7 +56,7 @@ class _LoginScreenState extends State<LoginScreen> {
               builder: (_) => WorkerDashboard(workerName: phone),
             ),
           );
-        } else if (role == 'employer' || role == 'agent') {
+        } else {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
@@ -70,20 +66,12 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
           );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Unknown user role')),
-          );
         }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Invalid credentials')),
-        );
+        _showMessage("Invalid credentials");
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+      _showMessage("Error: $e");
     }
 
     if (mounted) {
@@ -91,15 +79,28 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  InputDecoration _inputDecoration(String label, IconData icon) {
+  void _showMessage(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(msg)),
+    );
+  }
+
+  InputDecoration _inputStyle(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: const Color(0xFF1E3A8A)),
+      prefixIcon: Icon(icon, color: const Color(0xFF2F3E6E)),
+      filled: true,
+      fillColor: Colors.grey.shade100,
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
+        borderSide: BorderSide.none,
       ),
-      focusedBorder: const OutlineInputBorder(
-        borderSide: BorderSide(color: Color(0xFF1E3A8A), width: 2),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(14),
+        borderSide: const BorderSide(
+          color: Color(0xFFA8C97F),
+          width: 2,
+        ),
       ),
     );
   }
@@ -107,51 +108,95 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF4F7F2),
+
       appBar: AppBar(
-        title: const Text('Login'),
-        backgroundColor: const Color(0xFF1E3A8A),
-        foregroundColor: Colors.white,
+        title: const Text("Login"),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () => Navigator.pop(context),
+        ),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text(
-              'Welcome Back!',
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 30),
 
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: _inputDecoration('Phone Number', Icons.phone),
-            ),
-            const SizedBox(height: 15),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 20),
 
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: _inputDecoration('Password', Icons.lock),
-            ),
-            const SizedBox(height: 25),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _isLoading ? null : _login,
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 15),
-                  backgroundColor: const Color(0xFF1E3A8A),
-                  foregroundColor: Colors.white,
+              // 🔥 HEADER
+              const Text(
+                "Welcome Back",
+                style: TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2F3E6E),
                 ),
-                child: _isLoading
-                    ? const CircularProgressIndicator(color: Colors.white)
-                    : const Text('Login', style: TextStyle(fontSize: 18)),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 5),
+
+              const Text(
+                "Login to continue",
+                style: TextStyle(color: Colors.black54),
+              ),
+
+              const SizedBox(height: 30),
+
+              // 🔥 PHONE
+              TextField(
+                controller: _phoneController,
+                keyboardType: TextInputType.phone,
+                decoration: _inputStyle("Phone Number", Icons.phone),
+              ),
+
+              const SizedBox(height: 15),
+
+              // 🔥 PASSWORD
+              TextField(
+                controller: _passwordController,
+                obscureText: true,
+                decoration: _inputStyle("Password", Icons.lock),
+              ),
+
+              const SizedBox(height: 25),
+
+              // 🔥 LOGIN BUTTON
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _isLoading ? null : _login,
+                  child: _isLoading
+                      ? const SizedBox(
+                    height: 20,
+                    width: 20,
+                    child: CircularProgressIndicator(
+                      color: Colors.white,
+                      strokeWidth: 2,
+                    ),
+                  )
+                      : const Text("Login"),
+                ),
+              ),
+
+              const SizedBox(height: 15),
+
+              // 🔥 SECONDARY ACTION
+              Center(
+                child: TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text(
+                    "Don't have an account? Register",
+                    style: TextStyle(color: Color(0xFF2F3E6E)),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
