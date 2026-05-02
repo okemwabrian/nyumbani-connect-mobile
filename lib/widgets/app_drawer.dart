@@ -15,75 +15,138 @@ class AppDrawer extends StatelessWidget {
     return Drawer(
       child: Column(
         children: [
-          Container(
-            height: 140,
-            width: double.infinity,
-            color: const Color(0xFF2F3E6E),
-            alignment: Alignment.center,
-            child: const Text(
-              "Nyumbani Connect",
-              style: TextStyle(color: Colors.white, fontSize: 20),
+          // 🔥 HEADER (UPGRADED)
+          UserAccountsDrawerHeader(
+            decoration: const BoxDecoration(
+              color: Color(0xFF1E3A8A),
+            ),
+            accountName: const Text(
+              "John Doe",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            accountEmail: Text(
+              role.toUpperCase(),
+              style: const TextStyle(color: Colors.white70),
+            ),
+            currentAccountPicture: const CircleAvatar(
+              backgroundColor: Colors.white,
+              child: Icon(Icons.person, size: 40, color: Color(0xFF1E3A8A)),
             ),
           ),
 
-          _item(context, Icons.home, "Home", () {
-            Navigator.pop(context);
-          }),
-
-          _item(context, Icons.person, "Profile", () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProfileScreen(role: role),
-              ),
-            );
-          }),
-          _item(context, Icons.notifications, "Notifications", () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => NotificationsScreen(role: role),
-              ),
-            );
-          }),
-          _item(context, Icons.work, "Jobs", () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => JobTrackingScreen(role: role),
-              ),
-            );
-          }),
-
-        _item(context, Icons.settings, "Settings", () {
-          Navigator.push(
+          // 🔹 MENU ITEMS
+          _item(
             context,
-            MaterialPageRoute(
-              builder: (_) => SettingsScreen(role: role),
-            ),
-          );
-        }),
+            Icons.home,
+            "Home",
+                () {
+              Navigator.pop(context);
+            },
+          ),
+
+          _item(
+            context,
+            Icons.person,
+            "Profile",
+                () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ProfileScreen(role: role),
+                ),
+              );
+            },
+          ),
+
+          _item(
+            context,
+            Icons.notifications,
+            "Notifications",
+                () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => NotificationsScreen(role: role),
+                ),
+              );
+            },
+          ),
+
+          _item(
+            context,
+            Icons.work,
+            "Jobs",
+                () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => JobTrackingScreen(role: role),
+                ),
+              );
+            },
+          ),
+
+          _item(
+            context,
+            Icons.settings,
+            "Settings",
+                () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => SettingsScreen(role: role),
+                ),
+              );
+            },
+          ),
+
+          const Spacer(),
 
           const Divider(),
 
-          _item(context, Icons.logout, "Logout", () {
-            Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                  (route) => false,
-            );
-          }),
+          // 🔥 LOGOUT (STYLED)
+          _item(
+            context,
+            Icons.logout,
+            "Logout",
+                () {
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                    (route) => false,
+              );
+            },
+            color: Colors.red,
+          ),
+
+          const SizedBox(height: 20),
         ],
       ),
     );
   }
 
+  // 🔥 IMPROVED TILE
   Widget _item(
-      BuildContext context, IconData icon, String title, VoidCallback onTap) {
+      BuildContext context,
+      IconData icon,
+      String title,
+      VoidCallback onTap, {
+        Color? color,
+      }) {
     return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
+      leading: Icon(
+        icon,
+        color: color ?? const Color(0xFF1E3A8A),
+      ),
+      title: Text(
+        title,
+        style: TextStyle(
+          fontWeight: FontWeight.w500,
+          color: color ?? Colors.black87,
+        ),
+      ),
       onTap: onTap,
+      horizontalTitleGap: 8,
     );
   }
 }

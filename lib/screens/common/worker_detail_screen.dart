@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class WorkerDetailScreen extends StatelessWidget {
   final Map worker;
-  final String role; // employer / agent
+  final String role;
 
   const WorkerDetailScreen({
     super.key,
@@ -26,18 +26,22 @@ class WorkerDetailScreen extends StatelessWidget {
         child: Column(
           children: [
 
-            // 🔥 PROFILE HEADER
+            // 🔥 HEADER
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(color: Colors.black12, blurRadius: 6)
+                ],
               ),
               child: Column(
                 children: [
                   const CircleAvatar(
-                    radius: 50,
-                    child: Icon(Icons.person, size: 50),
+                    radius: 55,
+                    backgroundColor: Color(0xFFE6EDD8),
+                    child: Icon(Icons.person, size: 55),
                   ),
 
                   const SizedBox(height: 15),
@@ -45,7 +49,7 @@ class WorkerDetailScreen extends StatelessWidget {
                   Text(
                     worker['name'],
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2F3E6E),
                     ),
@@ -54,7 +58,7 @@ class WorkerDetailScreen extends StatelessWidget {
                   const SizedBox(height: 8),
 
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: isVerified
                           ? Colors.green.withOpacity(0.15)
@@ -75,25 +79,20 @@ class WorkerDetailScreen extends StatelessWidget {
 
             const SizedBox(height: 20),
 
-            // 🔥 SKILLS
             _infoCard(
               icon: Icons.star,
               title: "Skills",
               value: worker['skills'] ?? "Not specified",
             ),
 
-            const SizedBox(height: 15),
-
-            // 🔥 STATUS
             _infoCard(
               icon: Icons.work,
               title: "Status",
-              value: worker['status'] ?? "available",
+              value: worker['status'] ?? "Available",
             ),
 
             const SizedBox(height: 25),
 
-            // 🔥 ACTIONS
             if (role == "employer") _hireButton(context),
             if (role == "agent") _approveButton(context),
           ],
@@ -112,6 +111,9 @@ class WorkerDetailScreen extends StatelessWidget {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 4)
+        ],
       ),
       child: Row(
         children: [
@@ -124,13 +126,10 @@ class WorkerDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(color: Colors.black54)),
-              Text(
-                value,
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2F3E6E),
-                ),
-              ),
+              Text(value,
+                  style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2F3E6E))),
             ],
           ),
         ],
@@ -139,33 +138,24 @@ class WorkerDetailScreen extends StatelessWidget {
   }
 
   Widget _hireButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Job request sent to agent")),
-          );
-        },
-        child: const Text("Request Hire"),
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFF1E3A8A),
+        minimumSize: const Size(double.infinity, 50),
       ),
+      onPressed: () {},
+      child: const Text("Request Hire"),
     );
   }
 
   Widget _approveButton(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton(
-        style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFA8C97F),
-        ),
-        onPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("Worker Approved")),
-          );
-        },
-        child: const Text("Approve Worker"),
+    return ElevatedButton(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: const Color(0xFFA8C97F),
+        minimumSize: const Size(double.infinity, 50),
       ),
+      onPressed: () {},
+      child: const Text("Approve Worker"),
     );
   }
 }

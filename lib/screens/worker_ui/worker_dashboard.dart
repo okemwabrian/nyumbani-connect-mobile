@@ -79,17 +79,21 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(18),
+                boxShadow: [
+                  BoxShadow(color: Colors.black12, blurRadius: 6)
+                ],
               ),
               child: Column(
                 children: [
                   Stack(
                     children: [
                       CircleAvatar(
-                        radius: 50,
+                        radius: 55,
+                        backgroundColor: const Color(0xFFE6EDD8),
                         backgroundImage:
                         _profileImage != null ? FileImage(_profileImage!) : null,
                         child: _profileImage == null
-                            ? const Icon(Icons.person, size: 50)
+                            ? const Icon(Icons.person, size: 55)
                             : null,
                       ),
                       Positioned(
@@ -98,9 +102,9 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                         child: InkWell(
                           onTap: _showImageOptions,
                           child: const CircleAvatar(
-                            radius: 14,
+                            radius: 16,
                             backgroundColor: Color(0xFFA8C97F),
-                            child: Icon(Icons.edit, size: 14),
+                            child: Icon(Icons.edit, size: 16),
                           ),
                         ),
                       ),
@@ -112,7 +116,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                   Text(
                     name,
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 22,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF2F3E6E),
                     ),
@@ -121,7 +125,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                   const SizedBox(height: 8),
 
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                     decoration: BoxDecoration(
                       color: _statusColor().withOpacity(0.15),
                       borderRadius: BorderRadius.circular(20),
