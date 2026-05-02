@@ -21,6 +21,14 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
   String skills = "Cleaning, Cooking";
   bool isVerified = false;
 
+  Color _statusColor() {
+    return isVerified ? Colors.green : Colors.orange;
+  }
+
+  String _statusText() {
+    return isVerified ? "Verified" : "Pending Verification";
+  }
+
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(source: source);
     if (picked != null) {
@@ -54,14 +62,10 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
     );
   }
 
-  Color _statusColor() => isVerified ? Colors.green : Colors.orange;
-  String _statusText() =>
-      isVerified ? "Verified" : "Pending Verification";
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      drawer: AppDrawer(role: "worker"), // ✅ FIXED
+      drawer: const AppDrawer(role: "worker"),
       backgroundColor: const Color(0xFFF4F7F2),
 
       appBar: AppBar(

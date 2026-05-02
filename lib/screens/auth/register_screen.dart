@@ -29,6 +29,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _selectedRole = widget.initialRole.toLowerCase();
   }
 
+  // ONLY UPDATE THIS PART INSIDE _submit()
+
   void _submit() {
     if (_nameController.text.isEmpty ||
         _phoneController.text.isEmpty ||
@@ -50,25 +52,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
       }
     }
 
-    // 🔥 TEMP ROUTING (UI MODE)
-    if (_selectedRole == "worker") {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => WorkerDashboard(workerName: _nameController.text),
-        ),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (_) => EmployerDashboard(
-            userName: _nameController.text,
-            role: _selectedRole,
-          ),
-        ),
-      );
-    }
+    // 🔥 TEMP (NEXT STEP = BACKEND)
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Registration API coming next")),
+    );
   }
 
   InputDecoration _input(String label, IconData icon) {

@@ -14,7 +14,6 @@ class NyumbaniApp extends StatelessWidget {
       title: 'Nyumbani Connect',
       debugShowCheckedModeBanner: false,
 
-      // 🎨 GLOBAL THEME (YOUR COLORS)
       theme: ThemeData(
         scaffoldBackgroundColor: const Color(0xFFF5F5F5),
 

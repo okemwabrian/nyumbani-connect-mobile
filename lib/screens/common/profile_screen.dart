@@ -48,7 +48,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
       appBar: AppBar(
         title: const Text("Profile"),
-        centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(isEditing ? Icons.save : Icons.edit),
@@ -61,27 +60,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-            CircleAvatar(
-              radius: 50,
-              backgroundColor: Colors.grey.shade300,
-              child: const Icon(Icons.person, size: 50),
-            ),
-
-            const SizedBox(height: 15),
-
-            Text(
-              name,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2F3E6E),
+            // 🔥 PROFILE HEADER
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+              ),
+              child: Column(
+                children: [
+                  const CircleAvatar(
+                    radius: 50,
+                    backgroundColor: Color(0xFFE6EDD8),
+                    child: Icon(Icons.person, size: 50),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    name,
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF2F3E6E),
+                    ),
+                  ),
+                ],
               ),
             ),
 
             const SizedBox(height: 20),
 
-            _field("Full Name", nameController, isEditing),
-            _field("Phone", phoneController, isEditing),
+            _field("Full Name", nameController),
+            _field("Phone", phoneController),
 
             _infoTile("County", county),
 
@@ -104,20 +113,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _field(String label, TextEditingController controller, bool editable) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 15),
+  Widget _field(String label, TextEditingController controller) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 15),
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+      ),
       child: TextField(
         controller: controller,
-        enabled: editable,
+        enabled: isEditing,
         decoration: InputDecoration(
           labelText: label,
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide.none,
-          ),
+          border: InputBorder.none,
         ),
       ),
     );

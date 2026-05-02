@@ -25,71 +25,12 @@ class WorkerDetailScreen extends StatelessWidget {
         padding: const EdgeInsets.all(20),
         child: Column(
           children: [
-
-            // 🔥 HEADER
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(color: Colors.black12, blurRadius: 6)
-                ],
-              ),
-              child: Column(
-                children: [
-                  const CircleAvatar(
-                    radius: 55,
-                    backgroundColor: Color(0xFFE6EDD8),
-                    child: Icon(Icons.person, size: 55),
-                  ),
-
-                  const SizedBox(height: 15),
-
-                  Text(
-                    worker['name'],
-                    style: const TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2F3E6E),
-                    ),
-                  ),
-
-                  const SizedBox(height: 8),
-
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: isVerified
-                          ? Colors.green.withOpacity(0.15)
-                          : Colors.orange.withOpacity(0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      isVerified ? "Verified" : "Pending",
-                      style: TextStyle(
-                        color: isVerified ? Colors.green : Colors.orange,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-
+            _header(isVerified),
             const SizedBox(height: 20),
 
-            _infoCard(
-              icon: Icons.star,
-              title: "Skills",
-              value: worker['skills'] ?? "Not specified",
-            ),
-
-            _infoCard(
-              icon: Icons.work,
-              title: "Status",
-              value: worker['status'] ?? "Available",
-            ),
+            _infoCard(Icons.star, "Skills", worker['skills'] ?? "Not specified"),
+            const SizedBox(height: 15),
+            _infoCard(Icons.work, "Status", worker['status'] ?? "Available"),
 
             const SizedBox(height: 25),
 
@@ -101,19 +42,57 @@ class WorkerDetailScreen extends StatelessWidget {
     );
   }
 
-  Widget _infoCard({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
+  Widget _header(bool isVerified) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        children: [
+          const CircleAvatar(
+            radius: 55,
+            backgroundColor: Color(0xFFE6EDD8),
+            child: Icon(Icons.person, size: 55),
+          ),
+          const SizedBox(height: 15),
+          Text(
+            worker['name'],
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF2F3E6E),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+            decoration: BoxDecoration(
+              color: isVerified
+                  ? Colors.green.withOpacity(0.15)
+                  : Colors.orange.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              isVerified ? "Verified" : "Pending",
+              style: TextStyle(
+                color: isVerified ? Colors.green : Colors.orange,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _infoCard(IconData icon, String title, String value) {
     return Container(
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 4)
-        ],
       ),
       child: Row(
         children: [
@@ -126,10 +105,13 @@ class WorkerDetailScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(title, style: const TextStyle(color: Colors.black54)),
-              Text(value,
-                  style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xFF2F3E6E))),
+              Text(
+                value,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF2F3E6E),
+                ),
+              ),
             ],
           ),
         ],
@@ -138,24 +120,25 @@ class WorkerDetailScreen extends StatelessWidget {
   }
 
   Widget _hireButton(BuildContext context) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFF1E3A8A),
-        minimumSize: const Size(double.infinity, 50),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: () {},
+        child: const Text("Request Hire"),
       ),
-      onPressed: () {},
-      child: const Text("Request Hire"),
     );
   }
 
   Widget _approveButton(BuildContext context) {
-    return ElevatedButton(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFA8C97F),
-        minimumSize: const Size(double.infinity, 50),
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFFA8C97F),
+        ),
+        onPressed: () {},
+        child: const Text("Approve Worker"),
       ),
-      onPressed: () {},
-      child: const Text("Approve Worker"),
     );
   }
 }

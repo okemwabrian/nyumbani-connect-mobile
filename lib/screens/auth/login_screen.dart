@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../services/auth_service.dart';
 import '../worker_ui/worker_dashboard.dart';
 import '../employer_ui/employer_dashboard.dart';
+import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -107,95 +108,96 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F2),
+    return GestureDetector(
+      onTap: () => FocusScope.of(context).unfocus(),
 
-      appBar: AppBar(
-        title: const Text("Login"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+      child: Scaffold(
+        backgroundColor: const Color(0xFFF4F7F2),
+
+        appBar: AppBar(
+          title: const Text("Login"),
         ),
-      ),
 
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SizedBox(height: 20),
 
-              // 🔥 HEADER
-              const Text(
-                "Welcome Back",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xFF2F3E6E),
-                ),
-              ),
-
-              const SizedBox(height: 5),
-
-              const Text(
-                "Login to continue",
-                style: TextStyle(color: Colors.black54),
-              ),
-
-              const SizedBox(height: 30),
-
-              // 🔥 PHONE
-              TextField(
-                controller: _phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: _inputStyle("Phone Number", Icons.phone),
-              ),
-
-              const SizedBox(height: 15),
-
-              // 🔥 PASSWORD
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: _inputStyle("Password", Icons.lock),
-              ),
-
-              const SizedBox(height: 25),
-
-              // 🔥 LOGIN BUTTON
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: _isLoading ? null : _login,
-                  child: _isLoading
-                      ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      color: Colors.white,
-                      strokeWidth: 2,
-                    ),
-                  )
-                      : const Text("Login"),
-                ),
-              ),
-
-              const SizedBox(height: 15),
-
-              // 🔥 SECONDARY ACTION
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text(
-                    "Don't have an account? Register",
-                    style: TextStyle(color: Color(0xFF2F3E6E)),
+                const Text(
+                  "Welcome Back",
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF2F3E6E),
                   ),
                 ),
-              ),
-            ],
+
+                const SizedBox(height: 5),
+
+                const Text(
+                  "Login to continue",
+                  style: TextStyle(color: Colors.black54),
+                ),
+
+                const SizedBox(height: 30),
+
+                TextField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: _inputStyle("Phone Number", Icons.phone),
+                ),
+
+                const SizedBox(height: 15),
+
+                TextField(
+                  controller: _passwordController,
+                  obscureText: true,
+                  decoration: _inputStyle("Password", Icons.lock),
+                ),
+
+                const SizedBox(height: 25),
+
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: _isLoading ? null : _login,
+                    child: _isLoading
+                        ? const SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                        : const Text("Login"),
+                  ),
+                ),
+
+                const SizedBox(height: 15),
+
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                          const RegisterScreen(initialRole: "worker"),
+                        ),
+                      );
+                    },
+                    child: const Text(
+                      "Don't have an account? Register",
+                      style: TextStyle(color: Color(0xFF2F3E6E)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),

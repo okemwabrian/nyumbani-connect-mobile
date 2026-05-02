@@ -10,7 +10,6 @@ class JobTrackingScreen extends StatefulWidget {
 }
 
 class _JobTrackingScreenState extends State<JobTrackingScreen> {
-  // 🔥 TEMP DATA (UI MODE)
   List jobs = [
     {
       "title": "House Cleaning",
@@ -42,10 +41,7 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
     return Scaffold(
       backgroundColor: const Color(0xFFF4F7F2),
 
-      appBar: AppBar(
-        title: const Text("Jobs"),
-        centerTitle: true,
-      ),
+      appBar: AppBar(title: const Text("Jobs")),
 
       body: ListView.builder(
         padding: const EdgeInsets.all(20),
@@ -53,82 +49,49 @@ class _JobTrackingScreenState extends State<JobTrackingScreen> {
         itemBuilder: (context, index) {
           final job = jobs[index];
 
-          return Container(
+          return Card(
             margin: const EdgeInsets.only(bottom: 15),
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
+            shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(job['title'],
+                      style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF2F3E6E))),
 
-                // 🔥 TITLE
-                Text(
-                  job['title'],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: Color(0xFF2F3E6E),
+                  const SizedBox(height: 6),
+
+                  Text("Worker: ${job['worker']}"),
+                  Text("County: ${job['county']}"),
+
+                  const SizedBox(height: 10),
+
+                  Chip(
+                    label: Text(job['status']),
+                    backgroundColor:
+                    _statusColor(job['status']).withOpacity(0.15),
                   ),
-                ),
 
-                const SizedBox(height: 8),
-
-                // 🔥 DETAILS
-                Text("Worker: ${job['worker']}"),
-                Text("County: ${job['county']}"),
-
-                const SizedBox(height: 10),
-
-                // 🔥 STATUS BADGE
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 10, vertical: 5),
-                  decoration: BoxDecoration(
-                    color: _statusColor(job['status']).withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    job['status'].toUpperCase(),
-                    style: TextStyle(
-                      color: _statusColor(job['status']),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 10),
-
-                // 🔥 ACTIONS
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    if (widget.role == "agent" &&
-                        job['status'] == "pending")
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            job['status'] = "assigned";
-                          });
-                        },
-                        child: const Text("Assign"),
-                      ),
-
-                    if (widget.role == "worker" &&
-                        job['status'] == "assigned")
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            job['status'] = "completed";
-                          });
-                        },
-                        child: const Text("Mark Complete"),
-                      ),
-                  ],
-                )
-              ],
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      if (widget.role == "agent" &&
+                          job['status'] == "pending")
+                        TextButton(
+                          onPressed: () {
+                            setState(() => job['status'] = "assigned");
+                          },
+                          child: const Text("Assign"),
+                        ),
+                    ],
+                  )
+                ],
+              ),
             ),
           );
         },

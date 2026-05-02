@@ -10,7 +10,6 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  // 🔥 TEMP DATA (UI MODE)
   List notifications = [
     {
       "title": "New Worker Registered",
@@ -38,22 +37,22 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   IconData _icon(String type) {
     switch (type) {
       case "job":
-        return Icons.work;
+        return Icons.work_outline;
       case "approval":
-        return Icons.verified;
+        return Icons.verified_outlined;
       default:
-        return Icons.notifications;
+        return Icons.notifications_none;
     }
   }
 
   Color _color(String type) {
     switch (type) {
       case "job":
-        return Colors.green;
+        return const Color(0xFFA8C97F);
       case "approval":
         return Colors.orange;
       default:
-        return Colors.blue;
+        return const Color(0xFF2F3E6E);
     }
   }
 
@@ -61,6 +60,11 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     setState(() {
       notifications[index]['read'] = true;
     });
+  }
+
+  Future<void> _refresh() async {
+    await Future.delayed(const Duration(seconds: 1));
+    setState(() {});
   }
 
   @override
@@ -73,70 +77,117 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         centerTitle: true,
       ),
 
-      body: ListView.builder(
-        padding: const EdgeInsets.all(20),
-        itemCount: notifications.length,
-        itemBuilder: (context, index) {
-          final item = notifications[index];
+      body: notifications.isEmpty
+          ? _emptyState()
+          : RefreshIndicator(
+        onRefresh: _refresh,
+        child: ListView.builder(
+          padding: const EdgeInsets.all(20),
+          itemCount: notifications.length,
+          itemBuilder: (context, index) {
+            final item = notifications[index];
+            final isRead = item['read'];
 
-          return GestureDetector(
-            onTap: () => markAsRead(index),
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 12),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: item['read']
-                    ? Colors.white
-                    : const Color(0xFFEAF3FF),
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    backgroundColor: _color(item['type']).withOpacity(0.15),
-                    child: Icon(
-                      _icon(item['type']),
-                      color: _color(item['type']),
-                    ),
-                  ),
+            return GestureDetector(
+              onTap: () => markAsRead(index),
+              child: Container(
+                margin: const EdgeInsets.only(bottom: 14),
+                decoration: BoxDecoration(
+                  color: isRead ? Colors.white : const Color(0xFFEAF3FF),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    if (!isRead)
+                      BoxShadow(
+                        color: Colors.blue.withOpacity(0.08),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      )
+                  ],
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      // 🔥 ICON
+                      CircleAvatar(
+                        radius: 22,
+                        backgroundColor:
+                        _color(item['type']).withOpacity(0.15),
+                        child: Icon(
+                          _icon(item['type']),
+                          color: _color(item['type']),
+                        ),
+                      ),
 
-                  const SizedBox(width: 12),
+                      const SizedBox(width: 14),
 
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          item['title'],
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2F3E6E),
+                      // 🔥 TEXT
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment:
+                          CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item['title'],
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 15,
+                                color: Color(0xFF2F3E6E),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item['message'],
+                              style: const TextStyle(
+                                color: Colors.black54,
+                              ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              item['time'],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // 🔥 UNREAD DOT
+                      if (!isRead)
+                        Container(
+                          width: 10,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.blue,
+                            shape: BoxShape.circle,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          item['message'],
-                          style: const TextStyle(color: Colors.black54),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          item['time'],
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
+                    ],
                   ),
-
-                  if (!item['read'])
-                    const Icon(Icons.circle, size: 10, color: Colors.blue),
-                ],
+                ),
               ),
-            ),
-          );
-        },
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  // 🔥 EMPTY STATE (VERY IMPORTANT UX)
+  Widget _emptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: const [
+          Icon(Icons.notifications_off, size: 60, color: Colors.grey),
+          SizedBox(height: 10),
+          Text(
+            "No notifications yet",
+            style: TextStyle(color: Colors.grey),
+          ),
+        ],
       ),
     );
   }

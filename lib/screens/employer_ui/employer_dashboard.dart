@@ -23,8 +23,18 @@ class _EmployerDashboardState extends State<EmployerDashboard> {
   String _selectedCounty = counties.first;
 
   List workers = [
-    {"name": "Jane Doe", "skills": "Cooking"},
-    {"name": "Mary Wanjiku", "skills": "Cleaning"},
+    {
+      "name": "Jane Doe",
+      "skills": "Cooking",
+      "status": "available",
+      "verified": true
+    },
+    {
+      "name": "Mary Wanjiku",
+      "skills": "Cleaning",
+      "status": "pending",
+      "verified": false
+    },
   ];
 
   @override
@@ -109,63 +119,140 @@ class _EmployerDashboardState extends State<EmployerDashboard> {
   }
 
   Widget _workerCard(Map worker) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 15),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 4)
-        ],
-      ),
-      child: Row(
-        children: [
-          const CircleAvatar(
-            radius: 25,
-            backgroundColor: Color(0xFFE6EDD8),
-            child: Icon(Icons.person, color: Color(0xFF2F3E6E)),
-          ),
+    final bool isVerified = worker['verified'] ?? false;
+    final String status = worker['status'] ?? "available";
 
-          const SizedBox(width: 15),
-
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(worker['name'],
-                    style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF2F3E6E))),
-                const SizedBox(height: 5),
-                Text(worker['skills']),
-              ],
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => WorkerDetailScreen(
+              worker: worker,
+              role: "employer",
             ),
           ),
-
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFA8C97F),
-              foregroundColor: const Color(0xFF2F3E6E),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 15),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(color: Colors.black12, blurRadius: 6),
+          ],
+        ),
+        child: Row(
+          children: [
+            // 🔥 AVATAR
+            Container(
+              padding: const EdgeInsets.all(3),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isVerified ? Colors.green : Colors.orange,
+                  width: 2,
+                ),
+              ),
+              child: const CircleAvatar(
+                radius: 26,
+                backgroundColor: Color(0xFFE6EDD8),
+                child: Icon(Icons.person, color: Color(0xFF2F3E6E)),
               ),
             ),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (_) => WorkerDetailScreen(
-                    worker: worker,
-                    role: "employer",
+
+            const SizedBox(width: 15),
+
+            // 🔥 DETAILS
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    worker['name'],
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                      color: Color(0xFF2F3E6E),
+                    ),
                   ),
+
+                  const SizedBox(height: 4),
+
+                  Text(
+                    worker['skills'] ?? "No skills listed",
+                    style: const TextStyle(color: Colors.black54),
+                  ),
+
+                  const SizedBox(height: 6),
+
+                  // 🔥 STATUS BADGE
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _statusColor(status).withOpacity(0.15),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: _statusColor(status),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // 🔥 ACTION BUTTON
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFA8C97F),
+                foregroundColor: const Color(0xFF2F3E6E),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              );
-            },
-            child: const Text("Hire"),
-          ),
-        ],
+                elevation: 2,
+              ),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => WorkerDetailScreen(
+                      worker: worker,
+                      role: "employer",
+                    ),
+                  ),
+                );
+              },
+              child: const Text("Hire"),
+            ),
+          ],
+        ),
       ),
     );
   }
-}
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case "available":
+        return Colors.green;
+      case "allocated":
+        return Colors.orange;
+      case "pending":
+        return Colors.blue;
+      default:
+        return Colors.grey;
+    }
+  }
+  }
