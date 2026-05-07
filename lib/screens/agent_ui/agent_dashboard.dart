@@ -13,13 +13,8 @@ class _AgentDashboardState extends State<AgentDashboard> with SingleTickerProvid
   late TabController _tabController;
 
   final List<Map<String, dynamic>> _pendingWorkers = [
-    {"name": "Alice Korir", "id_uploaded": true, "skills": "Cooking, Elderly Care", "date": "2 hours ago"},
-    {"name": "John Maina", "id_uploaded": true, "skills": "Security, Gardening", "date": "1 day ago"},
-  ];
-
-  final List<Map<String, dynamic>> _jobRequests = [
-    {"title": "Full-time Maid", "employer": "Mercy N.", "location": "Nairobi", "salary": "KSh 15,000"},
-    {"title": "Weekend Cook", "employer": "Peter K.", "location": "Kiambu", "salary": "KSh 2,500/day"},
+    {"name": "Alice Korir", "id_uploaded": true, "skills": "Cooking, Elderly Care", "date": "2h ago"},
+    {"name": "John Maina", "id_uploaded": true, "skills": "Security", "date": "1d ago"},
   ];
 
   @override
@@ -33,67 +28,57 @@ class _AgentDashboardState extends State<AgentDashboard> with SingleTickerProvid
     return Scaffold(
       drawer: const AppDrawer(role: "agent"),
       appBar: AppBar(
-        title: const Text("Bureau Dashboard"),
+        title: const Text("Bureau Admin"),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: AppColors.tertiaryOlive,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
           tabs: const [
-            Tab(text: "Pending Approvals", icon: Icon(Icons.pending_actions_rounded)),
-            Tab(text: "Job Requests", icon: Icon(Icons.assignment_ind_rounded)),
+            Tab(text: "Verify Queue", icon: Icon(Icons.verified_user_rounded)),
+            Tab(text: "Job Matcher", icon: Icon(Icons.auto_awesome_rounded)),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          _buildPendingRoster(),
-          _buildJobRequestsView(),
+          _buildVerifyQueue(),
+          _buildJobMatcher(),
         ],
       ),
     );
   }
 
-  Widget _buildPendingRoster() {
+  Widget _buildVerifyQueue() {
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(24),
       itemCount: _pendingWorkers.length,
       itemBuilder: (context, index) {
         final worker = _pendingWorkers[index];
         return Card(
           margin: const EdgeInsets.only(bottom: 16),
           child: ExpansionTile(
-            leading: const CircleAvatar(backgroundColor: AppColors.bgPale, child: Icon(Icons.person, color: AppColors.primaryTeal)),
+            leading: const CircleAvatar(backgroundColor: AppColors.bgSurface, child: Icon(Icons.person, color: AppColors.primaryTeal)),
             title: Text(worker['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("Applied: ${worker['date']}"),
+            subtitle: Text("Registered: ${worker['date']}"),
             children: [
               Padding(
                 padding: const EdgeInsets.all(16.0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Uploaded Documents:", style: TextStyle(fontWeight: FontWeight.bold)),
+                    const Text("Automation: National ID Scanned", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                     const SizedBox(height: 8),
-                    _docItem("National ID / Passport", worker['id_uploaded']),
-                    const SizedBox(height: 16),
-                    Text("Skills: ${worker['skills']}"),
+                    Container(height: 100, width: double.infinity, color: AppColors.bgSurface, child: const Icon(Icons.badge_rounded, size: 50, color: AppColors.primaryTeal)),
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        Expanded(
-                          child: OutlinedButton(
-                            onPressed: () {},
-                            style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
-                            child: const Text("Reject"),
-                          ),
-                        ),
+                        Expanded(child: OutlinedButton(onPressed: () {}, child: const Text("REJECT"))),
                         const SizedBox(width: 12),
                         Expanded(
                           child: ElevatedButton(
                             onPressed: () {},
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                            child: const Text("Approve"),
+                            child: const Text("VERIFY ID"),
                           ),
                         ),
                       ],
@@ -108,76 +93,53 @@ class _AgentDashboardState extends State<AgentDashboard> with SingleTickerProvid
     );
   }
 
-  Widget _docItem(String title, bool uploaded) {
-    return Row(
+  Widget _buildJobMatcher() {
+    return ListView(
+      padding: const EdgeInsets.all(24),
       children: [
-        Icon(uploaded ? Icons.check_circle_rounded : Icons.error_outline_rounded,
-             color: uploaded ? Colors.green : Colors.red, size: 20),
-        const SizedBox(width: 8),
-        Text(title),
-        const Spacer(),
-        TextButton(onPressed: () {}, child: const Text("View File")),
+        const Text("Active Job Requests", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 16),
+        _matchCard("Nanny Needed", "Nairobi", "Mercy N."),
+        _matchCard("Professional Cook", "Kisumu", "Peter O."),
       ],
     );
   }
 
-  Widget _buildJobRequestsView() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(20),
-      itemCount: _jobRequests.length,
-      itemBuilder: (context, index) {
-        final job = _jobRequests[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            title: Text(job['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 4),
-                Text("Employer: ${job['employer']} • 📍 ${job['location']}"),
-                Text("Budget: ${job['salary']}", style: const TextStyle(color: AppColors.primaryTeal, fontWeight: FontWeight.bold)),
-              ],
-            ),
-            trailing: ElevatedButton(
-              onPressed: () => _showAllocationDialog(job),
-              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryTeal, minimumSize: const Size(100, 44)),
-              child: const Text("Allocate"),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  void _showAllocationDialog(Map job) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text("Allocate Worker"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
+  Widget _matchCard(String title, String location, String employer) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Select a verified worker for ${job['title']}"),
-            const SizedBox(height: 20),
-            _allocationItem("Mary Wanjiku"),
-            _allocationItem("Jane Doe"),
+            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            Text("📍 $location • From: $employer", style: const TextStyle(color: Colors.black54)),
+            const Divider(height: 32),
+            const Text("Smart Suggestions (Best Match):", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryTeal)),
+            const SizedBox(height: 12),
+            _suggestionItem("Mary Wanjiku", "98% Match"),
+            _suggestionItem("Jane Doe", "92% Match"),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(onPressed: () {}, child: const Text("ALLOCATE WORKER")),
+            ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: const Text("Cancel")),
-        ],
       ),
     );
   }
 
-  Widget _allocationItem(String name) {
-    return ListTile(
-      leading: const CircleAvatar(radius: 15, child: Icon(Icons.person, size: 15)),
-      title: Text(name),
-      trailing: const Icon(Icons.add_circle_outline_rounded, color: AppColors.primaryTeal),
-      onTap: () => Navigator.pop(context),
+  Widget _suggestionItem(String name, String match) {
+    return Row(
+      children: [
+        const Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
+        const SizedBox(width: 8),
+        Text(name, style: const TextStyle(fontSize: 14)),
+        const Spacer(),
+        Text(match, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondarySage, fontSize: 12)),
+      ],
     );
   }
 }

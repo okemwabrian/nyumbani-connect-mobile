@@ -19,6 +19,13 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
   File? _profileImage;
   final ImagePicker _picker = ImagePicker();
 
+  // Mock Job Feed Data
+  final List<Map<String, dynamic>> _availableJobs = [
+    {"title": "Full-time Nanny", "salary": "KSh 20,000", "location": "Nairobi", "posted": "1h ago"},
+    {"title": "Professional Chef", "salary": "KSh 45,000", "location": "Mombasa", "posted": "3h ago"},
+    {"title": "House Manager", "salary": "KSh 30,000", "location": "Kiambu", "posted": "5h ago"},
+  ];
+
   Future<void> _pickImage(ImageSource source) async {
     final picked = await _picker.pickImage(source: source);
     if (picked != null) {
@@ -29,35 +36,24 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
   void _showImageOptions() {
     showModalBottomSheet(
       context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
       builder: (_) => Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Profile Photo",
-              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-            ),
+            const Text("Profile Photo", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
             const SizedBox(height: 20),
             ListTile(
               leading: const Icon(Icons.camera_alt_rounded, color: AppColors.primaryTeal),
               title: const Text("Take Photo"),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.camera);
-              },
+              onTap: () { Navigator.pop(context); _pickImage(ImageSource.camera); },
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_rounded, color: AppColors.primaryTeal),
               title: const Text("Choose from Gallery"),
-              onTap: () {
-                Navigator.pop(context);
-                _pickImage(ImageSource.gallery);
-              },
+              onTap: () { Navigator.pop(context); _pickImage(ImageSource.gallery); },
             ),
           ],
         ),
@@ -76,40 +72,33 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
       appBar: AppBar(
         title: const Text("Worker Dashboard"),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_none_rounded),
-            onPressed: () {},
-          ),
+          IconButton(icon: const Icon(Icons.notifications_none_rounded), onPressed: () {}),
         ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(24),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // PROFILE CARD
             _buildProfileCard(appState, statusColor, isVerified),
-
-            const SizedBox(height: 24),
-
-            // VERIFICATION ALERT
-            if (!isVerified)
-              _buildVerificationAlert(),
-
-            const SizedBox(height: 24),
-
-            // INFO CARDS
-            _infoCard(
-              Icons.stars_rounded,
-              "My Skills",
-              appState.selectedSkills.isEmpty
-                ? "No skills selected"
-                : appState.selectedSkills.join(", ")
-            ),
-
-            const SizedBox(height: 24),
             
-            // JOB BOARD ACCESS
-            _buildJobBoardButton(isVerified),
+            const SizedBox(height: 32),
+            
+            // EARNINGS SUMMARY (Mock)
+            _buildEarningsCard(),
+
+            const SizedBox(height: 32),
+            
+            // SMART JOB FEED
+            const Text("Recommended Jobs", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark)),
+            const SizedBox(height: 16),
+            if (!isVerified)
+              _buildVerificationAlert()
+            else
+              ..._availableJobs.map((job) => _jobCard(job)),
+            
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -135,7 +124,7 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
                 tag: 'profile-pic',
                 child: CircleAvatar(
                   radius: 60,
-                  backgroundColor: AppColors.bgPale,
+                  backgroundColor: AppColors.bgSurface,
                   backgroundImage: _profileImage != null ? FileImage(_profileImage!) : null,
                   child: _profileImage == null ? const Icon(Icons.person, size: 60, color: AppColors.primaryTeal) : null,
                 ),
@@ -170,88 +159,116 @@ class _WorkerDashboardState extends State<WorkerDashboard> {
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(isVerified ? Icons.verified_rounded : Icons.pending_rounded, size: 16, color: statusColor),
+                // Glowing Indicator
+                Container(
+                  width: 8, height: 8,
+                  decoration: BoxDecoration(color: statusColor, shape: BoxShape.circle, boxShadow: [BoxShadow(color: statusColor, blurRadius: 4)]),
+                ),
                 const SizedBox(width: 8),
                 Text(
                   appState.verificationStatus,
-                  style: TextStyle(color: statusColor, fontWeight: FontWeight.bold),
+                  style: TextStyle(color: statusColor, fontWeight: FontWeight.bold, fontSize: 12),
                 ),
               ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildEarningsCard() {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.primaryTeal,
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text("Total Earnings", style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14)),
+              const Text("KSh 12,500", style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          const Icon(Icons.account_balance_wallet_rounded, color: AppColors.tertiaryOlive, size: 40),
+        ],
+      ),
+    );
+  }
+
+  Widget _jobCard(Map<String, dynamic> job) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                const CircleAvatar(backgroundColor: AppColors.bgSurface, child: Icon(Icons.work_rounded, color: AppColors.primaryTeal)),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(job['title'], style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Text("${job['location']} • ${job['posted']}", style: const TextStyle(color: Colors.black54, fontSize: 12)),
+                    ],
+                  ),
+                ),
+                Text(job['salary'], style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => _handleQuickApply(job['title']),
+                style: ElevatedButton.styleFrom(backgroundColor: AppColors.secondarySage, minimumSize: const Size(0, 44)),
+                child: const Text("QUICK APPLY", style: TextStyle(fontSize: 14)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _handleQuickApply(String jobTitle) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
+        content: Text("Applied to $jobTitle!\nYour verified profile and ID status have been shared.", textAlign: TextAlign.center),
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("AWESOME"))],
       ),
     );
   }
 
   Widget _buildVerificationAlert() {
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.tertiaryOlive.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.tertiaryOlive),
-      ),
-      child: const Row(
-        children: [
-          Icon(Icons.info_outline_rounded, color: AppColors.primaryTeal),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              "Your ID is being reviewed. You will have full access once verified.",
-              style: TextStyle(color: AppColors.textDark, fontSize: 13),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildJobBoardButton(bool isVerified) {
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: isVerified ? () {
-          // Navigate to Job Board
-        } : null,
-        icon: const Icon(Icons.search_rounded),
-        label: const Text("BROWSE JOB BOARD"),
-        style: ElevatedButton.styleFrom(
-          backgroundColor: isVerified ? AppColors.primaryTeal : Colors.grey.shade400,
-        ),
-      ),
-    );
-  }
-
-  Widget _infoCard(IconData icon, String title, String value) {
-    return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: AppColors.tertiaryOlive.withOpacity(0.2),
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 8, offset: const Offset(0, 2))
-        ],
+        border: Border.all(color: AppColors.tertiaryOlive),
       ),
-      child: Row(
+      child: const Column(
         children: [
-          CircleAvatar(
-            backgroundColor: AppColors.bgPale,
-            child: Icon(icon, color: AppColors.primaryTeal),
+          Icon(Icons.lock_person_rounded, color: AppColors.primaryTeal, size: 40),
+          SizedBox(height: 12),
+          Text(
+            "Account Under Review",
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: const TextStyle(color: Colors.black54, fontSize: 14)),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: AppColors.textDark),
-                ),
-              ],
-            ),
+          Text(
+            "Complete your ID verification to unlock the job board and start applying.",
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 13, color: Colors.black54),
           ),
         ],
       ),
