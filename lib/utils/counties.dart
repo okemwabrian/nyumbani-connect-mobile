@@ -1,9 +1,9 @@
 const List<String> counties = [
-  "Nairobi","Mombasa","Kisumu","Nakuru","Kiambu","Machakos","Kajiado",
-  "Uasin Gishu","Meru","Nyeri","Murang'a","Embu","Kitui","Bungoma",
-  "Busia","Kakamega","Vihiga","Siaya","Homa Bay","Migori","Kisii",
-  "Nyamira","Narok","Bomet","Kericho","Nandi","Elgeyo Marakwet",
-  "West Pokot","Trans Nzoia","Turkana","Marsabit","Isiolo","Wajir",
-  "Mandera","Garissa","Tana River","Lamu","Kilifi","Kwale","Taita Taveta",
-  "Laikipia","Samburu","Tharaka Nithi"
+  "Baringo", "Bomet", "Bungoma", "Busia", "Elgeyo Marakwet", "Embu", "Garissa",
+  "Homa Bay", "Isiolo", "Kajiado", "Kakamega", "Kericho", "Kiambu", "Kilifi",
+  "Kirinyaga", "Kisii", "Kisumu", "Kitui", "Kwale", "Laikipia", "Lamu",
+  "Machakos", "Makueni", "Mandera", "Marsabit", "Meru", "Migori", "Mombasa",
+  "Murang'a", "Nairobi", "Nakuru", "Nandi", "Narok", "Nyamira", "Nyandarua",
+  "Nyeri", "Samburu", "Siaya", "Taita Taveta", "Tana River", "Tharaka Nithi",
+  "Trans Nzoia", "Turkana", "Uasin Gishu", "Vihiga", "Wajir", "West Pokot"
 ];

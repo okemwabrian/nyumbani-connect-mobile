@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import '../../utils/app_theme.dart';
 import '../agent_ui/agent_dashboard.dart';
 import '../common/job_tracking_screen.dart';
 import '../common/notifications_screen.dart';
 
 class AgentNav extends StatefulWidget {
-  const AgentNav({super.key});
+  final String? phone;
+  const AgentNav({super.key, this.phone});
 
   @override
   State<AgentNav> createState() => _AgentNavState();
@@ -27,8 +29,10 @@ class _AgentNavState extends State<AgentNav> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-        selectedItemColor: const Color(0xFF1E3A8A),
-
+        selectedItemColor: AppColors.primaryTeal,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.verified),

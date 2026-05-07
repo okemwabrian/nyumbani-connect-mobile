@@ -1,6 +1,5 @@
-// employer_dashboard.dart (UPDATED)
-
 import 'package:flutter/material.dart';
+import '../../utils/app_theme.dart';
 import '../../utils/counties.dart';
 import '../../widgets/app_drawer.dart';
 import '../common/worker_detail_screen.dart';
@@ -20,239 +19,189 @@ class EmployerDashboard extends StatefulWidget {
 }
 
 class _EmployerDashboardState extends State<EmployerDashboard> {
-  String _selectedCounty = counties.first;
+  String _selectedCounty = counties.contains("Nairobi") ? "Nairobi" : counties.first;
 
-  List workers = [
-    {
-      "name": "Jane Doe",
-      "skills": "Cooking",
-      "status": "available",
-      "verified": true
-    },
-    {
-      "name": "Mary Wanjiku",
-      "skills": "Cleaning",
-      "status": "pending",
-      "verified": false
-    },
+  // Mock Workers
+  final List<Map<String, dynamic>> _mockWorkers = [
+    {"name": "Jane Doe", "skills": "Cooking, Cleaning", "status": "available", "verified": true, "county": "Nairobi"},
+    {"name": "Mary Wanjiku", "skills": "Laundry, Childcare", "status": "available", "verified": true, "county": "Kiambu"},
+    {"name": "David Otieno", "skills": "Gardening, Security", "status": "pending", "verified": false, "county": "Mombasa"},
   ];
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       drawer: AppDrawer(role: widget.role),
-      backgroundColor: const Color(0xFFF4F7F2),
-
       appBar: AppBar(
         title: Text("Welcome, ${widget.userName}"),
-        centerTitle: true,
-      ),
-
-      body: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          children: [
-
-            // 🔥 FILTER CARD
-            _buildFilterCard(),
-
-            const SizedBox(height: 20),
-
-            // HEADER
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  "Available Workers",
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2F3E6E),
-                  ),
-                ),
-                Text(_selectedCounty),
-              ],
-            ),
-
-            const SizedBox(height: 15),
-
-            Expanded(
-              child: ListView.builder(
-                itemCount: workers.length,
-                itemBuilder: (context, index) {
-                  final worker = workers[index];
-                  return _workerCard(worker);
-                },
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildFilterCard() {
-    return Container(
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 5)
+        actions: [
+          IconButton(icon: const Icon(Icons.add_circle_outline_rounded), onPressed: _showCreateJobDialog),
         ],
       ),
-      child: DropdownButtonFormField(
-        value: _selectedCounty,
-        items: counties.map((c) {
-          return DropdownMenuItem(value: c, child: Text(c));
-        }).toList(),
-        onChanged: (val) {
-          setState(() => _selectedCounty = val.toString());
-        },
-        decoration: const InputDecoration(
-          labelText: "Select County",
-          prefixIcon: Icon(Icons.location_on),
-          border: OutlineInputBorder(),
-        ),
-      ),
-    );
-  }
+      body: Column(
+        children: [
+          _buildHeader(),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(20),
+              children: [
+                _buildSectionHeader("Worker Discovery", Icons.person_search_rounded),
+                const SizedBox(height: 16),
+                ..._mockWorkers.where((w) => w['verified']).map((w) => _workerCard(w)),
 
-  Widget _workerCard(Map worker) {
-    final bool isVerified = worker['verified'] ?? false;
-    final String status = worker['status'] ?? "available";
+                const SizedBox(height: 32),
 
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => WorkerDetailScreen(
-              worker: worker,
-              role: "employer",
+                _buildSectionHeader("Top Bureaus", Icons.business_rounded),
+                const SizedBox(height: 16),
+                _buildBureauCard("Elite Home Care", "Nairobi", 4.8),
+                _buildBureauCard("SafeHands Agencies", "Kiambu", 4.5),
+              ],
             ),
           ),
-        );
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 15),
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: Colors.black12, blurRadius: 6),
+        ],
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _showCreateJobDialog,
+        backgroundColor: AppColors.primaryTeal,
+        icon: const Icon(Icons.post_add_rounded, color: Colors.white),
+        label: const Text("Post a Job", style: TextStyle(color: Colors.white)),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: AppColors.primaryTeal,
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(30)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: DropdownButtonHideUnderline(
+              child: DropdownButton<String>(
+                value: _selectedCounty,
+                isExpanded: true,
+                items: counties.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+                onChanged: (val) => setState(() => _selectedCounty = val!),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Row(
+      children: [
+        Icon(icon, color: AppColors.primaryTeal),
+        const SizedBox(width: 8),
+        Text(
+          title,
+          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textDark),
+        ),
+      ],
+    );
+  }
+
+  Widget _workerCard(Map<String, dynamic> worker) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ListTile(
+        contentPadding: const EdgeInsets.all(12),
+        leading: const Hero(
+          tag: 'worker-avatar',
+          child: CircleAvatar(
+            radius: 30,
+            backgroundColor: AppColors.bgPale,
+            child: Icon(Icons.person, color: AppColors.primaryTeal),
+          ),
+        ),
+        title: Row(
+          children: [
+            Text(worker['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(width: 8),
+            const Icon(Icons.verified_rounded, color: Colors.green, size: 16),
           ],
         ),
-        child: Row(
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // 🔥 AVATAR
-            Container(
-              padding: const EdgeInsets.all(3),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: isVerified ? Colors.green : Colors.orange,
-                  width: 2,
-                ),
-              ),
-              child: const CircleAvatar(
-                radius: 26,
-                backgroundColor: Color(0xFFE6EDD8),
-                child: Icon(Icons.person, color: Color(0xFF2F3E6E)),
-              ),
-            ),
+            Text(worker['skills'], style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 4),
+            Text("📍 ${worker['county']}", style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w500)),
+          ],
+        ),
+        trailing: ElevatedButton(
+          onPressed: () {},
+          style: ElevatedButton.styleFrom(
+            backgroundColor: AppColors.secondarySage,
+            minimumSize: const Size(80, 36),
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+          ),
+          child: const Text("Hire", style: TextStyle(fontSize: 12)),
+        ),
+      ),
+    );
+  }
 
-            const SizedBox(width: 15),
-
-            // 🔥 DETAILS
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    worker['name'],
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                      color: Color(0xFF2F3E6E),
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-
-                  Text(
-                    worker['skills'] ?? "No skills listed",
-                    style: const TextStyle(color: Colors.black54),
-                  ),
-
-                  const SizedBox(height: 6),
-
-                  // 🔥 STATUS BADGE
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _statusColor(status).withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Text(
-                          status.toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: _statusColor(status),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-
-            // 🔥 ACTION BUTTON
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFA8C97F),
-                foregroundColor: const Color(0xFF2F3E6E),
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                elevation: 2,
-              ),
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => WorkerDetailScreen(
-                      worker: worker,
-                      role: "employer",
-                    ),
-                  ),
-                );
-              },
-              child: const Text("Hire"),
-            ),
+  Widget _buildBureauCard(String name, String location, double rating) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: ListTile(
+        leading: const CircleAvatar(
+          backgroundColor: AppColors.tertiaryOlive,
+          child: Icon(Icons.business_rounded, color: AppColors.primaryTeal),
+        ),
+        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text("📍 $location"),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.star_rounded, color: Colors.amber, size: 18),
+            Text(rating.toString(), style: const TextStyle(fontWeight: FontWeight.bold)),
           ],
         ),
       ),
     );
   }
-  Color _statusColor(String status) {
-    switch (status.toLowerCase()) {
-      case "available":
-        return Colors.green;
-      case "allocated":
-        return Colors.orange;
-      case "pending":
-        return Colors.blue;
-      default:
-        return Colors.grey;
-    }
+
+  void _showCreateJobDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(30))),
+      builder: (context) => Padding(
+        padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom, left: 24, right: 24, top: 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text("Create Job Posting", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 20),
+            const TextField(decoration: InputDecoration(labelText: "Job Title", hintText: "e.g. Full-time House Manager")),
+            const SizedBox(height: 16),
+            const TextField(maxLines: 3, decoration: InputDecoration(labelText: "Description", hintText: "Describe tasks, salary, and expectations")),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _selectedCounty,
+              decoration: const InputDecoration(labelText: "Select County"),
+              items: counties.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+              onChanged: (val) {},
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(onPressed: () => Navigator.pop(context), child: const Text("POST JOB")),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
   }
-  }
+}

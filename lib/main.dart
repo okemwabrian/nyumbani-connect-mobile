@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import 'utils/app_theme.dart';
+import 'providers/app_state.dart';
 import 'screens/welcome_screen.dart';
+import 'services/session_service.dart';
+import 'screens/navigation/worker_nav.dart';
+import 'screens/navigation/employer_nav.dart';
+import 'screens/navigation/agent_nav.dart';
 
 void main() {
-  runApp(const NyumbaniApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AppState()),
+      ],
+      child: const NyumbaniApp(),
+    ),
+  );
 }
 
 class NyumbaniApp extends StatelessWidget {
@@ -13,32 +27,7 @@ class NyumbaniApp extends StatelessWidget {
     return MaterialApp(
       title: 'Nyumbani Connect',
       debugShowCheckedModeBanner: false,
-
-      theme: ThemeData(
-        scaffoldBackgroundColor: const Color(0xFFF5F5F5),
-
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF2F3E6E),
-        ),
-
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF2F3E6E),
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-
-        elevatedButtonTheme: ElevatedButtonThemeData(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF2F3E6E),
-            foregroundColor: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-        ),
-      ),
-
+      theme: AppTheme.lightTheme,
       home: const SplashScreen(),
     );
   }
@@ -55,37 +44,87 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    _goNext();
+    _initApp();
   }
 
-  Future<void> _goNext() async {
-    await Future.delayed(const Duration(seconds: 2));
-
+  Future<void> _initApp() async {
+    await Future.delayed(const Duration(seconds: 3));
     if (!mounted) return;
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-    );
+    final session = await SessionService.getSession();
+    if (!mounted) return;
+
+    if (session != null) {
+      final role = session['role'];
+      final phone = session['phone'] ?? "";
+
+      // Update Provider state
+      Provider.of<AppState>(context, listen: false).setSession(role, phone);
+
+      Widget nextScreen;
+      if (role == 'worker') {
+        nextScreen = WorkerNav(phone: phone);
+      } else if (role == 'agent') {
+        nextScreen = const AgentNav();
+      } else {
+        nextScreen = EmployerNav(phone: phone);
+      }
+
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => nextScreen),
+      );
+    } else {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF2F3E6E),
+      backgroundColor: AppColors.primaryTeal,
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: const [
-            Icon(Icons.home, color: Colors.white, size: 80),
-            SizedBox(height: 20),
-            Text(
-              "Nyumbani Connect",
+          children: [
+            // Placeholder for Lottie or Icon
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                color: AppColors.bgPale,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.home_work_rounded,
+                color: AppColors.primaryTeal,
+                size: 80,
+              ),
+            ),
+            const SizedBox(height: 32),
+            const Text(
+              "NYUMBANI CONNECT",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+                fontSize: 32,
+                letterSpacing: 4,
+                fontWeight: FontWeight.w900,
               ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Reliable Connections, Better Homes",
+              style: TextStyle(
+                color: AppColors.tertiaryOlive.withOpacity(0.9),
+                fontSize: 16,
+                letterSpacing: 1.2,
+              ),
+            ),
+            const SizedBox(height: 80),
+            const CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(AppColors.secondarySage),
             ),
           ],
         ),

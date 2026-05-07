@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
+import '../../utils/app_theme.dart';
 import '../../services/auth_service.dart';
-import '../worker_ui/worker_dashboard.dart';
-import '../employer_ui/employer_dashboard.dart';
+import '../../services/session_service.dart';
+import '../../providers/app_state.dart';
+import '../navigation/worker_nav.dart';
+import '../navigation/employer_nav.dart';
+import '../navigation/agent_nav.dart';
 import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -15,190 +19,120 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-
   bool _isLoading = false;
 
-  @override
-  void dispose() {
-    _phoneController.dispose();
-    _passwordController.dispose();
-    super.dispose();
-  }
-
   void _login() async {
-    if (_phoneController.text.isEmpty || _passwordController.text.isEmpty) {
-      _showMessage("Enter phone and password");
+    final phone = _phoneController.text.trim();
+    final password = _passwordController.text.trim();
+
+    if (phone.isEmpty || password.isEmpty) {
+      _showMessage("Please fill all fields");
       return;
     }
 
     setState(() => _isLoading = true);
 
     try {
-      final result = await AuthService.login(
-        _phoneController.text.trim(),
-        _passwordController.text.trim(),
-      );
-
+      final result = await AuthService.login(phone, password);
       if (!mounted) return;
 
       if (result != null) {
         final role = result['role'];
-        final phone = result['phone'];
+        final userPhone = result['phone'] ?? phone;
         final token = result['access'];
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('token', token);
-        await prefs.setString('role', role);
+        await SessionService.saveSession(token, role, userPhone);
 
+        if (!mounted) return;
+
+        // Update Provider State
+        Provider.of<AppState>(context, listen: false).setSession(role, userPhone);
+
+        Widget nextScreen;
         if (role == 'worker') {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => WorkerDashboard(workerName: phone),
-            ),
-          );
+          nextScreen = WorkerNav(phone: userPhone);
+        } else if (role == 'agent') {
+          nextScreen = const AgentNav();
         } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (_) => EmployerDashboard(
-                userName: phone,
-                role: role,
-              ),
-            ),
-          );
+          nextScreen = EmployerNav(phone: userPhone);
         }
+
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => nextScreen),
+          (route) => false,
+        );
       } else {
         _showMessage("Invalid credentials");
       }
     } catch (e) {
-      _showMessage("Error: $e");
-    }
-
-    if (mounted) {
-      setState(() => _isLoading = false);
+      _showMessage("Login failed: $e");
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   void _showMessage(String msg) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg)),
-    );
-  }
-
-  InputDecoration _inputStyle(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: const Color(0xFF2F3E6E)),
-      filled: true,
-      fillColor: Colors.grey.shade100,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: const BorderSide(
-          color: Color(0xFFA8C97F),
-          width: 2,
-        ),
-      ),
+      SnackBar(content: Text(msg), backgroundColor: AppColors.primaryTeal),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusScope.of(context).unfocus(),
-
-      child: Scaffold(
-        backgroundColor: const Color(0xFFF4F7F2),
-
-        appBar: AppBar(
-          title: const Text("Login"),
-        ),
-
-        body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 20),
-
-                const Text(
-                  "Welcome Back",
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2F3E6E),
-                  ),
-                ),
-
-                const SizedBox(height: 5),
-
-                const Text(
-                  "Login to continue",
-                  style: TextStyle(color: Colors.black54),
-                ),
-
-                const SizedBox(height: 30),
-
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: _inputStyle("Phone Number", Icons.phone),
-                ),
-
-                const SizedBox(height: 15),
-
-                TextField(
-                  controller: _passwordController,
-                  obscureText: true,
-                  decoration: _inputStyle("Password", Icons.lock),
-                ),
-
-                const SizedBox(height: 25),
-
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton(
-                    onPressed: _isLoading ? null : _login,
-                    child: _isLoading
-                        ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                        : const Text("Login"),
-                  ),
-                ),
-
-                const SizedBox(height: 15),
-
-                Center(
-                  child: TextButton(
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                          const RegisterScreen(initialRole: "worker"),
-                        ),
-                      );
-                    },
-                    child: const Text(
-                      "Don't have an account? Register",
-                      style: TextStyle(color: Color(0xFF2F3E6E)),
-                    ),
-                  ),
-                ),
-              ],
+    return Scaffold(
+      appBar: AppBar(title: const Text("Login")),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          children: [
+            const SizedBox(height: 40),
+            const Icon(Icons.lock_person_rounded, size: 80, color: AppColors.primaryTeal),
+            const SizedBox(height: 24),
+            const Text(
+              "Welcome Back",
+              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textDark),
             ),
-          ),
+            const Text("Login to manage your connections"),
+            const SizedBox(height: 48),
+
+            TextField(
+              controller: _phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(
+                labelText: "Phone Number",
+                prefixIcon: Icon(Icons.phone_android_rounded),
+              ),
+            ),
+            const SizedBox(height: 20),
+            TextField(
+              controller: _passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: "Password",
+                prefixIcon: Icon(Icons.lock_outline_rounded),
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            ElevatedButton(
+              onPressed: _isLoading ? null : _login,
+              child: _isLoading
+                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
+                : const Text("LOGIN"),
+            ),
+
+            const SizedBox(height: 24),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const RegisterScreen(initialRole: 'worker'))
+                );
+              },
+              child: const Text("Don't have an account? Register"),
+            ),
+          ],
         ),
       ),
     );

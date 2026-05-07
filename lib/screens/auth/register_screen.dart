@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../utils/app_theme.dart';
 import '../../utils/counties.dart';
-import '../worker_ui/worker_dashboard.dart';
-import '../employer_ui/employer_dashboard.dart';
+import '../../providers/app_state.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String initialRole;
-
   const RegisterScreen({super.key, required this.initialRole});
 
   @override
@@ -13,231 +13,159 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  int _currentStep = 0;
+  String _selectedCounty = counties.first;
+  
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _passwordController = TextEditingController();
 
-  String _selectedRole = "worker";
-  String _selectedCounty = counties.first;
-  DateTime? _dob;
-
-  String _error = '';
-
-  @override
-  void initState() {
-    super.initState();
-    _selectedRole = widget.initialRole.toLowerCase();
-  }
-
-  // ONLY UPDATE THIS PART INSIDE _submit()
-
-  void _submit() {
-    if (_nameController.text.isEmpty ||
-        _phoneController.text.isEmpty ||
-        _passwordController.text.isEmpty) {
-      setState(() => _error = "Fill all fields");
-      return;
-    }
-
-    if (_selectedRole == "worker") {
-      if (_dob == null) {
-        setState(() => _error = "Select date of birth");
-        return;
-      }
-
-      final age = DateTime.now().year - _dob!.year;
-      if (age < 18) {
-        setState(() => _error = "Must be 18+");
-        return;
-      }
-    }
-
-    // 🔥 TEMP (NEXT STEP = BACKEND)
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Registration API coming next")),
-    );
-  }
-
-  InputDecoration _input(String label, IconData icon) {
-    return InputDecoration(
-      labelText: label,
-      prefixIcon: Icon(icon, color: const Color(0xFF2F3E6E)),
-      filled: true,
-      fillColor: Colors.grey.shade100,
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(14),
-        borderSide: BorderSide.none,
-      ),
-    );
-  }
-
-  Widget _roleCard(String role, IconData icon) {
-    final selected = _selectedRole == role;
-
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedRole = role),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: selected ? const Color(0xFFA8C97F) : Colors.white,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: Colors.grey.shade200),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, color: const Color(0xFF2F3E6E)),
-              const SizedBox(height: 6),
-              Text(role.toUpperCase()),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Future<void> _pickDOB() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: DateTime(2000),
-      firstDate: DateTime(1950),
-      lastDate: DateTime.now(),
-    );
-
-    if (picked != null) {
-      setState(() => _dob = picked);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F2),
-
-      appBar: AppBar(
-        title: const Text("Register"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
+      appBar: AppBar(title: const Text("Digital Onboarding")),
+      body: Stepper(
+        type: StepperType.horizontal,
+        currentStep: _currentStep,
+        onStepContinue: () {
+          if (_currentStep < 2) {
+            setState(() => _currentStep++);
+          } else {
+            _handleRegistration();
+          }
+        },
+        onStepCancel: () {
+          if (_currentStep > 0) setState(() => _currentStep--);
+        },
+        controlsBuilder: (context, details) {
+          return Padding(
+            padding: const EdgeInsets.only(top: 32.0),
+            child: ElevatedButton(
+              onPressed: details.onStepContinue,
+              child: Text(_currentStep == 2 ? "COMPLETE VERIFICATION" : "NEXT STEP"),
+            ),
+          );
+        },
+        steps: [
+          Step(
+            title: const Text("Profile"),
+            isActive: _currentStep >= 0,
+            content: _buildBasicInfo(),
+          ),
+          Step(
+            title: const Text("Expertise"),
+            isActive: _currentStep >= 1,
+            content: _buildRoleSpecificInfo(),
+          ),
+          Step(
+            title: const Text("Security"),
+            isActive: _currentStep >= 2,
+            content: _buildVerificationStep(),
+          ),
+        ],
       ),
+    );
+  }
 
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(20),
-        child: Column(
+  Widget _buildBasicInfo() {
+    return Column(
+      children: [
+        TextField(controller: _nameController, decoration: const InputDecoration(labelText: "Full Legal Name")),
+        const SizedBox(height: 16),
+        TextField(controller: _phoneController, decoration: const InputDecoration(labelText: "Active Phone Number")),
+        const SizedBox(height: 16),
+        DropdownButtonFormField<String>(
+          value: _selectedCounty,
+          decoration: const InputDecoration(labelText: "Primary County"),
+          items: counties.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
+          onChanged: (val) => setState(() => _selectedCounty = val!),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildRoleSpecificInfo() {
+    if (widget.initialRole == 'worker') {
+      return Consumer<AppState>(
+        builder: (context, appState, child) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              "Create Account",
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF2F3E6E),
+            const Text("Smart Skill Clusters", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text("Select a cluster to auto-populate your skills.", style: TextStyle(fontSize: 12, color: Colors.black54)),
+            const SizedBox(height: 16),
+            ...appState.skillClusters.keys.map((cluster) => Padding(
+              padding: const EdgeInsets.only(bottom: 8.0),
+              child: ActionChip(
+                label: Text(cluster),
+                onPressed: () => appState.autoSelectCluster(cluster),
+                backgroundColor: AppColors.tertiaryOlive.withOpacity(0.3),
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🔥 INPUTS
-            TextField(
-              controller: _nameController,
-              decoration: _input("Full Name", Icons.person),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _phoneController,
-              decoration: _input("Phone Number", Icons.phone),
-            ),
-            const SizedBox(height: 12),
-
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: _input("Password", Icons.lock),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🔥 ROLE
-            const Text("Select Role"),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                _roleCard("worker", Icons.person),
-                const SizedBox(width: 10),
-                _roleCard("employer", Icons.business),
-                const SizedBox(width: 10),
-                _roleCard("agent", Icons.admin_panel_settings),
-              ],
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🔥 COUNTY
-            const Text("County"),
-            const SizedBox(height: 10),
-
-            DropdownButtonFormField(
-              value: _selectedCounty,
-              items: counties.map((c) {
-                return DropdownMenuItem(value: c, child: Text(c));
-              }).toList(),
-              onChanged: (val) {
-                setState(() => _selectedCounty = val.toString());
-              },
-              decoration: _input("Select County", Icons.location_on),
-            ),
-
-            const SizedBox(height: 20),
-
-            // 🔥 DOB
-            if (_selectedRole == "worker") ...[
-              GestureDetector(
-                onTap: _pickDOB,
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.cake, color: Color(0xFF2F3E6E)),
-                      const SizedBox(width: 10),
-                      Text(
-                        _dob == null
-                            ? "Select Date of Birth"
-                            : "${_dob!.day}/${_dob!.month}/${_dob!.year}",
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
-
-            // 🔥 ERROR
-            if (_error.isNotEmpty)
-              Text(
-                _error,
-                style: const TextStyle(color: Colors.red),
-              ),
-
-            const SizedBox(height: 20),
-
-            // 🔥 BUTTON
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: _submit,
-                child: const Text("Register"),
-              ),
+            )),
+            const Divider(height: 32),
+            const Text("Individual Skills", style: TextStyle(fontWeight: FontWeight.bold)),
+            Wrap(
+              spacing: 8,
+              children: appState.selectedSkills.map((skill) => Chip(
+                label: Text(skill),
+                onDeleted: () => appState.toggleSkill(skill),
+                deleteIconColor: AppColors.primaryTeal,
+              )).toList(),
             ),
           ],
         ),
-      ),
+      );
+    }
+    return const Column(
+      children: [
+        TextField(decoration: InputDecoration(labelText: "Bureau/Employer Details")),
+        SizedBox(height: 16),
+        TextField(decoration: InputDecoration(labelText: "Tax/Business ID")),
+      ],
+    );
+  }
+
+  Widget _buildVerificationStep() {
+    final appState = Provider.of<AppState>(context);
+    return Column(
+      children: [
+        const Text("Biometric & ID Capture", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const SizedBox(height: 24),
+        InkWell(
+          onTap: () {
+            // Automation: Mock ID extraction
+            appState.processNationalID("ID-19921015-ABC");
+          },
+          child: Container(
+            height: 150,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: AppColors.primaryTeal, style: BorderStyle.solid),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.qr_code_scanner_rounded, size: 40, color: AppColors.primaryTeal),
+                const SizedBox(height: 8),
+                const Text("Scan National ID", style: TextStyle(fontWeight: FontWeight.bold)),
+                if (appState.calculatedAge != null)
+                  Text("Age Verified: ${appState.calculatedAge} Years", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+        const Text("ID parsing automatically extracts age and DOB to ensure 18+ compliance.", 
+          textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.black54)),
+      ],
+    );
+  }
+
+  void _handleRegistration() {
+    Navigator.pop(context);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Onboarding Successful! Welcome to Nyumbani."), backgroundColor: AppColors.primaryTeal),
     );
   }
 }

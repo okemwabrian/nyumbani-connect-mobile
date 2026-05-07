@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../screens/common/profile_screen.dart';
+import 'package:provider/provider.dart';
+import '../utils/app_theme.dart';
+import '../providers/app_state.dart';
 import '../screens/welcome_screen.dart';
-import '../screens/common/job_tracking_screen.dart';
-import '../screens/common/notifications_screen.dart';
-import '../screens/common/settings_screen.dart';
+import '../services/session_service.dart';
 
 class AppDrawer extends StatelessWidget {
   final String role;
@@ -12,109 +12,73 @@ class AppDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final appState = Provider.of<AppState>(context);
+
     return Drawer(
+      backgroundColor: AppColors.bgPale,
       child: Column(
         children: [
-          // 🔥 HEADER
           UserAccountsDrawerHeader(
-            decoration: const BoxDecoration(
-              color: Color(0xFF1E3A8A),
+            decoration: const BoxDecoration(color: AppColors.primaryTeal),
+            accountName: Text(
+              appState.phone ?? "User",
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
             ),
-            accountName: const Text(
-              "John Doe",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-            accountEmail: Text(
-              role.toUpperCase(),
-              style: const TextStyle(color: Colors.white70),
+            accountEmail: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppColors.tertiaryOlive.withOpacity(0.3),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                role.toUpperCase(),
+                style: const TextStyle(color: Colors.white, fontSize: 12),
+              ),
             ),
             currentAccountPicture: const CircleAvatar(
               backgroundColor: Colors.white,
-              child: Icon(Icons.person, size: 40, color: Color(0xFF1E3A8A)),
+              child: Icon(Icons.person, size: 45, color: AppColors.primaryTeal),
             ),
           ),
 
-          _item(context, Icons.home, "Home", () {
-            Navigator.pop(context);
-          }),
-
-          _item(context, Icons.person, "Profile", () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ProfileScreen(role: role),
-              ),
-            );
-          }),
-
-          _item(context, Icons.notifications, "Notifications", () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => NotificationsScreen(role: role),
-              ),
-            );
-          }),
-
-          _item(context, Icons.work, "Jobs", () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => JobTrackingScreen(role: role),
-              ),
-            );
-          }),
-
-          _item(context, Icons.settings, "Settings", () {
-            Navigator.pop(context);
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => SettingsScreen(role: role),
-              ),
-            );
-          }),
+          _drawerItem(context, Icons.home_rounded, "Dashboard", () => Navigator.pop(context)),
+          _drawerItem(context, Icons.person_outline_rounded, "Profile", () {}),
+          _drawerItem(context, Icons.notifications_none_rounded, "Notifications", () {}),
+          _drawerItem(context, Icons.settings_outlined, "Settings", () {}),
 
           const Spacer(),
-          const Divider(),
-
-          _item(
+          const Divider(indent: 20, endIndent: 20),
+          _drawerItem(
             context,
-            Icons.logout,
+            Icons.logout_rounded,
             "Logout",
-                () {
-              Navigator.pushAndRemoveUntil(
-                context,
-                MaterialPageRoute(builder: (_) => const WelcomeScreen()),
-                    (route) => false,
-              );
+            () async {
+              await SessionService.logout();
+              appState.logout();
+              if (context.mounted) {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                  (route) => false,
+                );
+              }
             },
-            color: Colors.red,
+            color: Colors.redAccent
           ),
-
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _item(
-      BuildContext context,
-      IconData icon,
-      String title,
-      VoidCallback onTap, {
-        Color? color,
-      }) {
+  Widget _drawerItem(BuildContext context, IconData icon, String title, VoidCallback onTap, {Color? color}) {
     return ListTile(
-      leading: Icon(icon, color: color ?? const Color(0xFF1E3A8A)),
+      leading: Icon(icon, color: color ?? AppColors.primaryTeal),
       title: Text(
         title,
         style: TextStyle(
-          fontWeight: FontWeight.w500,
-          color: color ?? Colors.black87,
+          color: color ?? AppColors.textDark,
+          fontWeight: FontWeight.w600,
         ),
       ),
       onTap: onTap,
