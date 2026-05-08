@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'utils/app_theme.dart';
 import 'providers/app_state.dart';
+import 'providers/theme_provider.dart';
 import 'screens/welcome_screen.dart';
 import 'services/session_service.dart';
 import 'screens/navigation/worker_nav.dart';
@@ -13,6 +14,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AppState()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const NyumbaniApp(),
     ),
@@ -24,10 +26,15 @@ class NyumbaniApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return MaterialApp(
       title: 'Nyumbani Connect',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
+      darkTheme: AppTheme.darkTheme,
+      themeMode: themeProvider.isDarkMode ? ThemeMode.dark : ThemeMode.light,
+      locale: themeProvider.locale,
       home: const SplashScreen(),
     );
   }

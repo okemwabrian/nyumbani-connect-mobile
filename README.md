@@ -1,39 +1,42 @@
-# Nyumbani Connect - HCI & Automation Ecosystem
+# 🚀 Nyumbani Connect - The "Super App" for Household Care
 
-Nyumbani Connect is a high-end, fully automated employment ecosystem for Kenya, connecting verified **House Managers (Workers)** with **Employers** via intermediary **Bureaus (Agents)**. 
+Nyumbani Connect is a premium, high-end job-matching ecosystem designed specifically for the Kenyan market. It bridges the gap between **Professional Household Managers (Workers)**, **Bureaus (Agents)**, and **Employers (Clients)** through an HCI-driven automated platform.
 
-The project follows a strict **HCI-driven (Human-Computer Interaction)** design philosophy, focusing on trust, security, and extreme automation to reduce manual data entry.
+## 🌟 Key Features (Phase 6 & 7 Upgrade)
+*   **🎭 Multi-Role Ecosystem:** Tailored dashboards for Workers, Employers, Bureaus, and Admins.
+*   **🌍 Full Localization:** Real-time English & Kiswahili toggle with automatic UI translation.
+*   **🛡️ Automated KYC:** Compulsory National ID upload and automated verification simulation.
+*   **🎬 Premium UX:** Looping video backgrounds on auth screens and elastic Lottie animations.
+*   **💬 Real-Time Communication:** Direct in-app chat and integrated one-tap calling functionality.
+*   **📅 Professional Tools:** Integrated `table_calendar` for interview scheduling and portfolio galleries for workers.
+*   **📍 County-Based Logic:** Intelligent job matching and discovery filtering across Kenya's 47 counties.
 
 ## 🎨 Visual Identity
-The app utilizes an earthy-professional 4-color palette designed to reduce cognitive load:
-- **Primary Teal (#327A7D):** Authority and action.
-- **Sage Green (#80A486):** Navigation and secondary states.
-- **Tertiary Olive (#C2D19D):** Highlights and status indicators.
-- **Surface Pale (#E7EFD0):** Scaffold background for reduced eye strain.
+The app utilizes a nature-inspired palette to establish trust and reduce eye strain:
+-   **Deep Teal (#327A7D):** Represents authority, professionalism, and primary actions.
+-   **Sage Green (#80A486):** Used for navigation and secondary interactive states.
+-   **Tertiary Olive (#C2D19D):** Highlights, status indicators, and empty states.
+-   **Surface Pale (#E7EFD0):** Background scaffold to ensure clarity and low cognitive load.
 
 ## 🤖 Smart Automations
-- **Smart Skill Picker:** Workers select a job category, and the app automatically pre-highlights associated skills.
-- **ID/Age Verification:** Automated parsing of National ID photos to extract DOB and verify 18+ legal compliance.
-- **Regional Job Alerts:** Real-time push notifications sent to workers in specific counties (1 of 47) when a relevant job is posted.
-- **Smart Matching:** Bureau agents receive "Best Match" suggestions (percentage-based) for job allocations.
+-   **Smart Skill Picker:** Auto-populates expertise based on job clusters.
+-   **ID Parser:** Extracts age and DOB from ID documents to ensure 18+ compliance.
+-   **Hiring Panel:** A professional recruitment workflow with Approve/Reject/Call capabilities.
 
-## 🏗️ Three-Dashboard Architecture
-Based on the authenticated role, users are routed to a custom experience:
-1. **Worker Dashboard:** Focus on earnings, regional job feeds, and "Quick Apply" functionality.
-2. **Employer Dashboard:** Tools for automated job posting and a hiring panel to track applicants.
-3. **Bureau Dashboard:** A verification queue for ID/Skills review and a smart job-allocation center.
+## 🏗️ Architecture
+-   **Frontend:** Flutter (Material 3) with dynamic Dark/Light mode support.
+-   **State Management:** `Provider` for auth, theme, and localization.
+-   **Navigation:** Professional `Navigator` flow with persistent App Drawer.
+-   **Backend (In Progress):** Django REST Framework.
 
-## 🛠️ Tech Stack
-- **Framework:** Flutter (Material 3)
-- **State Management:** Provider
-- **Animations:** Lottie
-- **Fonts:** Google Fonts (Outfit)
-- **Data Persistence:** SharedPreferences
+## 🚀 Installation & Build
+1.  **Dependencies:** Ensure you have the Flutter SDK (Stable) installed.
+2.  **Clean Cache:** If you encounter `Invalid depfile`, run:
+    ```bash
+    flutter clean
+    flutter pub get
+    ```
+3.  **Run:** Use `flutter run` on an Android/iOS device or emulator.
 
-## 🚀 Getting Started
-1. Ensure Flutter SDK is installed.
-2. Clone the repository.
-3. Run `flutter pub get` to fetch dependencies.
-4. Run `flutter run` on your preferred device.
-
-**Note:** For development testing, you can use any phone number to login. Prefixes `1` (Worker) and `2` (Agent) determine the initial role simulation.
+---
+*Developed with focus on Human-Computer Interaction (HCI) and Kenyan labor market efficiency.*

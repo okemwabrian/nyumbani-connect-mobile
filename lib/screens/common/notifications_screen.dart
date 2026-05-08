@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../utils/app_theme.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../providers/theme_provider.dart';
 
 class NotificationsScreen extends StatefulWidget {
   final String role;
@@ -10,185 +14,82 @@ class NotificationsScreen extends StatefulWidget {
 }
 
 class _NotificationsScreenState extends State<NotificationsScreen> {
-  List notifications = [
+  List<Map<String, dynamic>> notifications = [
     {
-      "title": "New Worker Registered",
-      "message": "Jane Doe is awaiting approval",
-      "type": "approval",
-      "time": "2 min ago",
-      "read": false
+      "id": 1, "title": "New Job Application", "message": "Alice Korir applied for your Nanny position.",
+      "type": "job", "time": "2 mins ago", "read": false
     },
     {
-      "title": "Job Assigned",
-      "message": "You have been assigned a job in Nairobi",
-      "type": "job",
-      "time": "10 min ago",
-      "read": false
+      "id": 2, "title": "Account Verified", "message": "Your profile is now verified by the Bureau.",
+      "type": "approval", "time": "1 hour ago", "read": true
     },
     {
-      "title": "Profile Updated",
-      "message": "Your profile was successfully updated",
-      "type": "system",
-      "time": "1 hr ago",
-      "read": true
+      "id": 3, "title": "System Update", "message": "Nyumbani Connect version 2.0 is now live.",
+      "type": "system", "time": "5 hours ago", "read": true
     },
   ];
 
-  IconData _icon(String type) {
-    switch (type) {
-      case "job":
-        return Icons.work_outline;
-      case "approval":
-        return Icons.verified_outlined;
-      default:
-        return Icons.notifications_none;
-    }
-  }
-
-  Color _color(String type) {
-    switch (type) {
-      case "job":
-        return const Color(0xFFA8C97F);
-      case "approval":
-        return Colors.orange;
-      default:
-        return const Color(0xFF2F3E6E);
-    }
-  }
-
-  void markAsRead(int index) {
+  void markAsRead(int id) {
     setState(() {
-      notifications[index]['read'] = true;
+      final i = notifications.indexWhere((n) => n['id'] == id);
+      if (i != -1) notifications[i]['read'] = true;
     });
   }
 
-  Future<void> _refresh() async {
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {});
+  void delete(int id) {
+    setState(() => notifications.removeWhere((n) => n['id'] == id));
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    
     return Scaffold(
-      backgroundColor: const Color(0xFFF4F7F2),
-
       appBar: AppBar(
-        title: const Text("Notifications"),
-        centerTitle: true,
+        title: Text(themeProvider.translate('notifications')),
+        actions: [
+          if (notifications.isNotEmpty)
+            TextButton(
+              onPressed: () => setState(() => notifications.clear()),
+              child: const Text("CLEAR ALL", style: TextStyle(color: Colors.white, fontSize: 12)),
+            )
+        ],
       ),
-
       body: notifications.isEmpty
-          ? _emptyState()
-          : RefreshIndicator(
-        onRefresh: _refresh,
-        child: ListView.builder(
-          padding: const EdgeInsets.all(20),
-          itemCount: notifications.length,
-          itemBuilder: (context, index) {
-            final item = notifications[index];
-            final isRead = item['read'];
-
-            return GestureDetector(
-              onTap: () => markAsRead(index),
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 14),
-                decoration: BoxDecoration(
-                  color: isRead ? Colors.white : const Color(0xFFEAF3FF),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    if (!isRead)
-                      BoxShadow(
-                        color: Colors.blue.withOpacity(0.08),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
-                      )
-                  ],
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      // 🔥 ICON
-                      CircleAvatar(
-                        radius: 22,
-                        backgroundColor:
-                        _color(item['type']).withOpacity(0.15),
-                        child: Icon(
-                          _icon(item['type']),
-                          color: _color(item['type']),
-                        ),
-                      ),
-
-                      const SizedBox(width: 14),
-
-                      // 🔥 TEXT
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment:
-                          CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              item['title'],
-                              style: const TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 15,
-                                color: Color(0xFF2F3E6E),
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              item['message'],
-                              style: const TextStyle(
-                                color: Colors.black54,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              item['time'],
-                              style: const TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-
-                      // 🔥 UNREAD DOT
-                      if (!isRead)
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: const BoxDecoration(
-                            color: Colors.blue,
-                            shape: BoxShape.circle,
-                          ),
-                        ),
-                    ],
+        ? EmptyStateWidget(icon: Icons.notifications_none_rounded, title: "No Alerts", subtitle: "Stay tuned for updates.")
+        : ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: notifications.length,
+            itemBuilder: (context, index) {
+              final n = notifications[index];
+              return Dismissible(
+                key: Key(n['id'].toString()),
+                onDismissed: (_) => delete(n['id']),
+                background: Container(color: Colors.redAccent, child: const Icon(Icons.delete, color: Colors.white)),
+                child: Card(
+                  elevation: n['read'] ? 0 : 2,
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  child: ListTile(
+                    onTap: () => markAsRead(n['id']),
+                    leading: CircleAvatar(
+                      backgroundColor: n['read'] ? Colors.grey[200] : AppColors.primaryTeal.withValues(alpha: 0.1),
+                      child: Icon(_getIcon(n['type']), color: AppColors.primaryTeal),
+                    ),
+                    title: Text(n['title'], style: TextStyle(fontWeight: n['read'] ? FontWeight.normal : FontWeight.bold)),
+                    subtitle: Text(n['message'], maxLines: 2, overflow: TextOverflow.ellipsis),
+                    trailing: Text(n['time'], style: const TextStyle(fontSize: 10, color: Colors.grey)),
                   ),
                 ),
-              ),
-            );
-          },
-        ),
-      ),
+              );
+            },
+          ),
     );
   }
 
-  // 🔥 EMPTY STATE (VERY IMPORTANT UX)
-  Widget _emptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: const [
-          Icon(Icons.notifications_off, size: 60, color: Colors.grey),
-          SizedBox(height: 10),
-          Text(
-            "No notifications yet",
-            style: TextStyle(color: Colors.grey),
-          ),
-        ],
-      ),
-    );
+  IconData _getIcon(String type) {
+    if (type == 'job') return Icons.work_history_rounded;
+    if (type == 'approval') return Icons.verified_user_rounded;
+    return Icons.info_outline_rounded;
   }
 }

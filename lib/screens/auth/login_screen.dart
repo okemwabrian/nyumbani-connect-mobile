@@ -4,6 +4,10 @@ import '../../utils/app_theme.dart';
 import '../../services/auth_service.dart';
 import '../../services/session_service.dart';
 import '../../providers/app_state.dart';
+import '../../providers/theme_provider.dart';
+import '../../widgets/video_background.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../widgets/primary_button.dart';
 import '../navigation/worker_nav.dart';
 import '../navigation/employer_nav.dart';
 import '../navigation/agent_nav.dart';
@@ -17,35 +21,36 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController _phoneController = TextEditingController();
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _identifierController = TextEditingController(); 
   final TextEditingController _passwordController = TextEditingController();
   bool _isLoading = false;
+  String _selectedRole = 'employer'; 
 
   void _login() async {
-    final phone = _phoneController.text.trim();
-    final password = _passwordController.text.trim();
+    if (!_formKey.currentState!.validate()) return;
 
-    if (phone.isEmpty || password.isEmpty) {
-      _showMessage("Please fill all fields");
-      return;
-    }
+    final identifier = _identifierController.text.trim();
+    final password = _passwordController.text.trim();
 
     setState(() => _isLoading = true);
 
     try {
-      final result = await AuthService.login(phone, password);
+      await Future.delayed(const Duration(seconds: 2));
+      
+      final result = await AuthService.login(identifier, password);
+      
       if (!mounted) return;
 
       if (result != null) {
-        final role = result['role'];
-        final userPhone = result['phone'] ?? phone;
+        final role = result['role'] ?? _selectedRole;
+        final userPhone = result['phone'] ?? identifier;
         final token = result['access'];
 
         await SessionService.saveSession(token, role, userPhone);
 
         if (!mounted) return;
 
-        // Update Provider State
         Provider.of<AppState>(context, listen: false).setSession(role, userPhone);
 
         Widget nextScreen;
@@ -53,6 +58,9 @@ class _LoginScreenState extends State<LoginScreen> {
           nextScreen = WorkerNav(phone: userPhone);
         } else if (role == 'agent') {
           nextScreen = const AgentNav();
+        } else if (role == 'admin') {
+          // Placeholder for Admin Dashboard
+          nextScreen = EmployerNav(phone: userPhone);
         } else {
           nextScreen = EmployerNav(phone: userPhone);
         }
@@ -63,76 +71,130 @@ class _LoginScreenState extends State<LoginScreen> {
           (route) => false,
         );
       } else {
-        _showMessage("Invalid credentials");
+        _showMessage("Invalid credentials. Please try again.", isError: true);
       }
     } catch (e) {
-      _showMessage("Login failed: $e");
+      _showMessage("Login failed. Check your connection.", isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
-  void _showMessage(String msg) {
+  void _showMessage(String msg, {required bool isError}) {
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), backgroundColor: AppColors.primaryTeal),
+      SnackBar(
+        content: Text(msg), 
+        backgroundColor: isError ? Colors.redAccent : AppColors.primaryTeal,
+        behavior: SnackBarBehavior.floating,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+
+    final List<Map<String, String>> roles = [
+      {'id': 'employer', 'label': themeProvider.translate('employer')},
+      {'id': 'worker', 'label': themeProvider.translate('worker')},
+      {'id': 'agent', 'label': themeProvider.translate('agent')},
+      {'id': 'admin', 'label': 'Admin'},
+    ];
+
     return Scaffold(
-      appBar: AppBar(title: const Text("Login")),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(24.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 40),
-            const Icon(Icons.lock_person_rounded, size: 80, color: AppColors.primaryTeal),
-            const SizedBox(height: 24),
-            const Text(
-              "Welcome Back",
-              style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppColors.textDark),
-            ),
-            const Text("Login to manage your connections"),
-            const SizedBox(height: 48),
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: Text(themeProvider.translate('login')),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+      ),
+      body: VideoBackground(
+        videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-kitchen-worker-preparing-a-meal-40342-large.mp4',
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24.0),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.surface.withValues(alpha: 0.95),
+                borderRadius: BorderRadius.circular(32),
+                boxShadow: [
+                  BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))
+                ],
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.lock_person_rounded, size: 64, color: AppColors.primaryTeal),
+                    const SizedBox(height: 16),
+                    Text(
+                      themeProvider.translate('login_title'),
+                      style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 24),
 
-            TextField(
-              controller: _phoneController,
-              keyboardType: TextInputType.phone,
-              decoration: const InputDecoration(
-                labelText: "Phone Number",
-                prefixIcon: Icon(Icons.phone_android_rounded),
+                    // Role Selection Dropdown
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(color: AppColors.tertiaryOlive),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedRole,
+                          isExpanded: true,
+                          items: roles.map((role) => DropdownMenuItem(
+                            value: role['id'],
+                            child: Text(role['label']!),
+                          )).toList(),
+                          onChanged: (val) => setState(() => _selectedRole = val!),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+
+                    CustomTextField(
+                      controller: _identifierController,
+                      label: themeProvider.translate('identifier_label'),
+                      icon: Icons.person_outline_rounded,
+                      validator: (value) => (value == null || value.isEmpty) ? themeProvider.translate('required_error') : null,
+                    ),
+                    const SizedBox(height: 16),
+                    CustomTextField(
+                      controller: _passwordController,
+                      label: themeProvider.translate('password'),
+                      icon: Icons.lock_outline_rounded,
+                      isPassword: true,
+                      validator: (value) => (value == null || value.length < 6) ? themeProvider.translate('password_error') : null,
+                    ),
+                    const SizedBox(height: 32),
+
+                    PrimaryButton(
+                      label: themeProvider.translate('login'),
+                      isLoading: _isLoading,
+                      onPressed: _login,
+                    ),
+
+                    const SizedBox(height: 20),
+                    TextButton(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (_) => RegisterScreen(initialRole: _selectedRole))
+                        );
+                      },
+                      child: Text(themeProvider.translate('no_account_action'), 
+                        style: const TextStyle(color: AppColors.primaryTeal, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
               ),
             ),
-            const SizedBox(height: 20),
-            TextField(
-              controller: _passwordController,
-              obscureText: true,
-              decoration: const InputDecoration(
-                labelText: "Password",
-                prefixIcon: Icon(Icons.lock_outline_rounded),
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            ElevatedButton(
-              onPressed: _isLoading ? null : _login,
-              child: _isLoading
-                ? const SizedBox(height: 20, width: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2))
-                : const Text("LOGIN"),
-            ),
-
-            const SizedBox(height: 24),
-            TextButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const RegisterScreen(initialRole: 'worker'))
-                );
-              },
-              child: const Text("Don't have an account? Register"),
-            ),
-          ],
+          ),
         ),
       ),
     );

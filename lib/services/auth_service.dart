@@ -17,13 +17,13 @@ class AuthService {
   }
 
   // 🔹 LOGIN
-  static Future<Map<String, dynamic>?> login(String phone, String password) async {
+  static Future<Map<String, dynamic>?> login(String identifier, String password) async {
     try {
       final response = await http.post(
         Uri.parse("$baseUrl/login/"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
-          "phone": phone,
+          "identifier": identifier,
           "password": password,
         }),
       ).timeout(const Duration(seconds: 5));
@@ -38,15 +38,15 @@ class AuthService {
 
     // 🔥 DEVELOPMENT MOCK: Allow login with specific prefixes for testing
     // To be removed when backend is fully ready
-    if (phone.isNotEmpty && password.isNotEmpty) {
+    if (identifier.isNotEmpty && password.isNotEmpty) {
       String role = "employer";
-      if (phone.startsWith("1")) role = "worker";
-      if (phone.startsWith("2")) role = "agent";
+      if (identifier.startsWith("1")) role = "worker";
+      if (identifier.startsWith("2")) role = "agent";
 
       return {
         "access": "mock_token_123",
         "role": role,
-        "phone": phone,
+        "phone": identifier,
       };
     }
 
