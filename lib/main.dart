@@ -104,10 +104,10 @@ class _SplashScreenState extends State<SplashScreen> {
                 color: AppColors.bgSurface,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.home_work_rounded,
-                color: AppColors.primaryTeal,
-                size: 80,
+              child: Image.asset(
+                'assets/app_icon.png',
+                width: 80,
+                height: 80,
               ),
             ),
             const SizedBox(height: 32),
