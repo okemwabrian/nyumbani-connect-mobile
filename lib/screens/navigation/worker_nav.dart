@@ -35,7 +35,7 @@ class _WorkerNavState extends State<WorkerNav> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _index,
         onTap: (i) => setState(() => _index = i),
-        selectedItemColor: AppColors.primaryTeal,
+        selectedItemColor: AppColors.secondarySage,
         unselectedItemColor: Colors.grey,
         showUnselectedLabels: true,
         type: BottomNavigationBarType.fixed,

@@ -15,7 +15,7 @@ class AppDrawer extends StatelessWidget {
     final appState = Provider.of<AppState>(context);
 
     return Drawer(
-      backgroundColor: AppColors.bgPale,
+      backgroundColor: AppColors.bgSurface,
       child: Column(
         children: [
           UserAccountsDrawerHeader(

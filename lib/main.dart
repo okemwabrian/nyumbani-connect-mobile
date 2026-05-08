@@ -94,7 +94,7 @@ class _SplashScreenState extends State<SplashScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: const BoxDecoration(
-                color: AppColors.bgPale,
+                color: AppColors.bgSurface,
                 shape: BoxShape.circle,
               ),
               child: const Icon(

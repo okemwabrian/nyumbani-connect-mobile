@@ -53,7 +53,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             content: _buildBasicInfo(),
           ),
           Step(
-            title: const Text("Expertise"),
+            title: const Text("Details"),
             isActive: _currentStep >= 1,
             content: _buildRoleSpecificInfo(),
           ),
@@ -70,13 +70,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget _buildBasicInfo() {
     return Column(
       children: [
-        TextField(controller: _nameController, decoration: const InputDecoration(labelText: "Full Legal Name")),
+        TextField(controller: _nameController, decoration: const InputDecoration(labelText: "Full Legal Name", prefixIcon: Icon(Icons.person_outline))),
         const SizedBox(height: 16),
-        TextField(controller: _phoneController, decoration: const InputDecoration(labelText: "Active Phone Number")),
+        TextField(controller: _phoneController, keyboardType: TextInputType.phone, decoration: const InputDecoration(labelText: "Active Phone Number", prefixIcon: Icon(Icons.phone_iphone_rounded))),
         const SizedBox(height: 16),
         DropdownButtonFormField<String>(
           value: _selectedCounty,
-          decoration: const InputDecoration(labelText: "Primary County"),
+          decoration: const InputDecoration(labelText: "Primary County", prefixIcon: Icon(Icons.location_on_outlined)),
           items: counties.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
           onChanged: (val) => setState(() => _selectedCounty = val!),
         ),
@@ -90,19 +90,20 @@ class _RegisterScreenState extends State<RegisterScreen> {
         builder: (context, appState, child) => Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text("Smart Skill Clusters", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const Text("Select a cluster to auto-populate your skills.", style: TextStyle(fontSize: 12, color: Colors.black54)),
+            const Text("Smart Skill Clusters", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryTeal)),
+            const Text("Select a cluster to auto-populate your expertise.", style: TextStyle(fontSize: 12, color: Colors.black54)),
             const SizedBox(height: 16),
-            ...appState.skillClusters.keys.map((cluster) => Padding(
-              padding: const EdgeInsets.only(bottom: 8.0),
-              child: ActionChip(
+            Wrap(
+              spacing: 8,
+              children: appState.skillClusters.keys.map((cluster) => ActionChip(
                 label: Text(cluster),
                 onPressed: () => appState.autoSelectCluster(cluster),
-                backgroundColor: AppColors.tertiaryOlive.withOpacity(0.3),
-              ),
-            )),
-            const Divider(height: 32),
-            const Text("Individual Skills", style: TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: AppColors.tertiaryOlive.withValues(alpha: 0.3),
+              )).toList(),
+            ),
+            const Divider(height: 40),
+            const Text("Your Selected Skills", style: TextStyle(fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               children: appState.selectedSkills.map((skill) => Chip(
@@ -114,21 +115,34 @@ class _RegisterScreenState extends State<RegisterScreen> {
           ],
         ),
       );
+    } else if (widget.initialRole == 'agent') {
+      return const Column(
+        children: [
+          TextField(decoration: InputDecoration(labelText: "Bureau Name", prefixIcon: Icon(Icons.business_rounded))),
+          SizedBox(height: 16),
+          TextField(decoration: InputDecoration(labelText: "Business Permit Number", prefixIcon: Icon(Icons.verified_user_rounded))),
+          SizedBox(height: 16),
+          TextField(decoration: InputDecoration(labelText: "Physical Office Address", prefixIcon: Icon(Icons.map_rounded))),
+        ],
+      );
+    } else {
+      return const Column(
+        children: [
+          Text("Employer Information", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
+          SizedBox(height: 16),
+          TextField(decoration: InputDecoration(labelText: "Home Address", prefixIcon: Icon(Icons.home_outlined))),
+          SizedBox(height: 16),
+          TextField(decoration: InputDecoration(labelText: "Emergency Contact", prefixIcon: Icon(Icons.contact_phone_outlined))),
+        ],
+      );
     }
-    return const Column(
-      children: [
-        TextField(decoration: InputDecoration(labelText: "Bureau/Employer Details")),
-        SizedBox(height: 16),
-        TextField(decoration: InputDecoration(labelText: "Tax/Business ID")),
-      ],
-    );
   }
 
   Widget _buildVerificationStep() {
     final appState = Provider.of<AppState>(context);
     return Column(
       children: [
-        const Text("Biometric & ID Capture", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+        const Text("Biometric & ID Capture", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: AppColors.primaryTeal)),
         const SizedBox(height: 24),
         InkWell(
           onTap: () {
@@ -136,36 +150,55 @@ class _RegisterScreenState extends State<RegisterScreen> {
             appState.processNationalID("ID-19921015-ABC");
           },
           child: Container(
-            height: 150,
+            height: 160,
             width: double.infinity,
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primaryTeal, style: BorderStyle.solid),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: AppColors.tertiaryOlive, width: 2),
             ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.qr_code_scanner_rounded, size: 40, color: AppColors.primaryTeal),
-                const SizedBox(height: 8),
+                const Icon(Icons.qr_code_scanner_rounded, size: 48, color: AppColors.primaryTeal),
+                const SizedBox(height: 12),
                 const Text("Scan National ID", style: TextStyle(fontWeight: FontWeight.bold)),
-                if (appState.calculatedAge != null)
-                  Text("Age Verified: ${appState.calculatedAge} Years", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                if (appState.calculatedAge != null) ...[
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.green.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(12)),
+                    child: Text("Age Verified: ${appState.calculatedAge} Years", style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                  ),
+                ],
               ],
             ),
           ),
         ),
-        const SizedBox(height: 16),
-        const Text("ID parsing automatically extracts age and DOB to ensure 18+ compliance.", 
+        const SizedBox(height: 20),
+        const Text("Our HCI logic extracts Age and DOB to ensure 18+ compliance without manual entry.", 
           textAlign: TextAlign.center, style: TextStyle(fontSize: 11, color: Colors.black54)),
       ],
     );
   }
 
   void _handleRegistration() {
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Onboarding Successful! Welcome to Nyumbani."), backgroundColor: AppColors.primaryTeal),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: const Icon(Icons.check_circle_rounded, color: Colors.green, size: 60),
+        content: const Text("Digital Onboarding Complete!\nYour details are being verified by our automated system.", textAlign: TextAlign.center),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              Navigator.pop(context);
+            }, 
+            child: const Text("CONTINUE TO LOGIN", style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryTeal))
+          ),
+        ],
+      ),
     );
   }
 }
