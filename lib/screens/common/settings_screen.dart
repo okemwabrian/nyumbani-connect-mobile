@@ -28,6 +28,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     _phoneController = TextEditingController(text: appState.phone ?? "0712 345 678");
     _emailController = TextEditingController(text: "user@nyumbani.co.ke");
     _addressController = TextEditingController(text: "Nairobi, Kenya");
+    
+    // Fix: Using the correct getter from AppState
     _ageController = TextEditingController(text: appState.calculatedAge?.toString() ?? "28");
   }
 
@@ -57,7 +59,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
     final appState = Provider.of<AppState>(context);
     final isDark = themeProvider.isDarkMode;
-    final theme = Theme.of(context);
 
     return Scaffold(
       appBar: AppBar(
@@ -96,7 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: const TextStyle(fontWeight: FontWeight.w600)),
               subtitle: Text(isDark ? "On" : "Off"),
               value: isDark,
-              activeColor: AppColors.primaryTeal,
+              activeThumbColor: AppColors.primaryTeal, // Fixed deprecated activeColor
               onChanged: (val) => themeProvider.toggleTheme(val),
             ),
 
@@ -166,7 +167,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             fontSize: 18, 
             fontWeight: FontWeight.bold, 
             letterSpacing: 0.5,
-            color: Theme.of(context).textTheme.titleLarge?.color, // FIX: Dynamic color
+            color: Theme.of(context).textTheme.titleLarge?.color,
           ),
         ),
       ],
@@ -179,7 +180,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: TextField(
         controller: controller,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color), // FIX: Dynamic color
+        style: TextStyle(color: Theme.of(context).textTheme.bodyLarge?.color),
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon, color: AppColors.secondarySage, size: 20),

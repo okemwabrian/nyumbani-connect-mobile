@@ -1,253 +1,315 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:image_picker/image_picker.dart';
-import '../../utils/app_theme.dart';
-import '../../utils/counties.dart';
 import '../../providers/app_state.dart';
-import '../../providers/theme_provider.dart';
-import '../../widgets/custom_text_field.dart';
-import '../../widgets/primary_button.dart';
+import '../worker_ui/worker_dashboard.dart';
+import '../agent_ui/agent_dashboard.dart';
 
 class RegisterScreen extends StatefulWidget {
-  final String initialRole;
-  const RegisterScreen({super.key, required this.initialRole});
+  final String? initialRole;
+  const RegisterScreen({super.key, this.initialRole});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  int _currentStep = 0;
-  String _selectedCounty = counties.first;
-  bool _isRegistering = false;
-  
-  final _formKey1 = GlobalKey<FormState>();
-  final _formKey2 = GlobalKey<FormState>();
+  int _step = 1;
+  UserRole? _selectedRole;
 
-  final _usernameController = TextEditingController();
-  final _emailController = TextEditingController();
+  // Form Controllers
+  final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _passwordController = TextEditingController();
-  final _otherSkillController = TextEditingController();
+  final _dobController = TextEditingController();
+  final _aboutController = TextEditingController();
+  final _expController = TextEditingController();
 
-  File? _idFront;
-  File? _profilePic;
-  List<File> _portfolio = [];
-  final ImagePicker _picker = ImagePicker();
+  String? _selectedArea;
 
-  final List<String> _baseSkills = [
-    "Nanny / Childcare", "Elderly Care", "Housekeeping", "Cooking / Chef",
-    "Gardening", "Driving", "Laundry & Ironing", "Pool Maintenance", "Security"
-  ];
-
-  Future<void> _pickFile(bool isID, {bool multi = false}) async {
-    if (multi) {
-      final List<XFile> picked = await _picker.pickMultiImage();
-      if (picked.isNotEmpty) setState(() => _portfolio.addAll(picked.map((x) => File(x.path))));
-    } else {
-      final XFile? picked = await _picker.pickImage(source: ImageSource.gallery);
-      if (picked != null) {
-        setState(() {
-          if (isID) _idFront = File(picked.path);
-          else _profilePic = File(picked.path);
-        });
+  @override
+  void initState() {
+    super.initState();
+    if (widget.initialRole != null) {
+      if (widget.initialRole == 'worker') {
+        _selectedRole = UserRole.worker;
+      } else if (widget.initialRole == 'agent') {
+        _selectedRole = UserRole.agent;
+      } else if (widget.initialRole == 'employer') {
+        _selectedRole = UserRole.employer;
       }
     }
   }
 
   @override
-  Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+  void dispose() {
+    _nameController.dispose();
+    _phoneController.dispose();
+    _dobController.dispose();
+    _aboutController.dispose();
+    _expController.dispose();
+    super.dispose();
+  }
 
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(themeProvider.translate('register'))),
-      body: Stepper(
-        type: StepperType.horizontal,
-        currentStep: _currentStep,
-        onStepContinue: () {
-          if (_currentStep == 0 && _formKey1.currentState!.validate()) setState(() => _currentStep++);
-          else if (_currentStep == 1 && _formKey2.currentState!.validate()) setState(() => _currentStep++);
-          else if (_currentStep == 2) _handleRegistration();
-        },
-        onStepCancel: () {
-          if (_currentStep > 0) setState(() => _currentStep--);
-        },
-        controlsBuilder: (context, details) {
-          return Padding(
-            padding: const EdgeInsets.only(top: 32.0),
-            child: PrimaryButton(
-              label: _currentStep == 2 ? themeProvider.translate('complete_setup') : themeProvider.translate('next_step'),
-              isLoading: _isRegistering,
-              onPressed: details.onStepContinue,
-            ),
-          );
-        },
-        steps: [
-          Step(
-            title: Text(themeProvider.translate('account')),
-            isActive: _currentStep >= 0,
-            content: Form(key: _formKey1, child: _buildAccountInfo(themeProvider)),
-          ),
-          Step(
-            title: Text(themeProvider.translate('details')),
-            isActive: _currentStep >= 1,
-            content: Form(key: _formKey2, child: _buildDetailInfo(themeProvider)),
-          ),
-          Step(
-            title: const Text("Files"),
-            isActive: _currentStep >= 2,
-            content: _buildUploads(themeProvider),
-          ),
-        ],
+      backgroundColor: const Color(0xFFF9FAFB),
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black), 
+          onPressed: () {
+            if (_step > 1) {
+              setState(() => _step--);
+            } else {
+              Navigator.pop(context);
+            }
+          }
+        ),
+        title: _step > 1 ? Text("Step $_step of 4", style: const TextStyle(color: Colors.black54, fontSize: 14)) : null,
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: _buildCurrentStep(),
       ),
     );
   }
 
-  Widget _buildAccountInfo(ThemeProvider tp) {
-    return Column(
-      children: [
-        CustomTextField(
-          controller: _usernameController, 
-          label: "${tp.translate('username')} (Compulsory)", 
-          icon: Icons.person_rounded, 
-          validator: (v) => (v == null || v.isEmpty) ? tp.translate('required_error') : null
-        ),
-        const SizedBox(height: 16),
-        CustomTextField(
-          controller: _emailController, 
-          label: "${tp.translate('email')} (Optional)", 
-          icon: Icons.email_outlined, 
-          keyboardType: TextInputType.emailAddress
-        ),
-        const SizedBox(height: 16),
-        CustomTextField(
-          controller: _phoneController, 
-          label: "${tp.translate('phone')} (Compulsory)", 
-          icon: Icons.phone_iphone_rounded, 
-          keyboardType: TextInputType.phone, 
-          validator: (v) => (v == null || v.isEmpty) ? tp.translate('required_error') : null
-        ),
-        const SizedBox(height: 16),
-        CustomTextField(
-          controller: _passwordController, 
-          label: tp.translate('password'), 
-          icon: Icons.lock_outline_rounded, 
-          isPassword: true, 
-          validator: (v) => (v == null || v.length < 6) ? tp.translate('password_error') : null
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDetailInfo(ThemeProvider tp) {
-    if (widget.initialRole == 'worker') {
-      return Consumer<AppState>(
-        builder: (context, appState, child) => Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(tp.translate('skills'), style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryTeal)),
-            const SizedBox(height: 12),
-            Wrap(
-              spacing: 8,
-              children: _baseSkills.map((s) => FilterChip(
-                label: Text(s),
-                selected: appState.selectedSkills.contains(s),
-                onSelected: (val) => appState.toggleSkill(s),
-              )).toList(),
-            ),
-            const SizedBox(height: 16),
-            CustomTextField(controller: _otherSkillController, label: "Other Skills (Separate with commas)", icon: Icons.add_circle_outline_rounded),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              value: _selectedCounty,
-              items: counties.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-              onChanged: (v) => setState(() => _selectedCounty = v!),
-              decoration: InputDecoration(labelText: tp.translate('county'), border: const OutlineInputBorder()),
-            ),
-          ],
-        ),
-      );
-    } else {
-      return Column(
-        children: [
-          DropdownButtonFormField<String>(
-            value: _selectedCounty,
-            items: counties.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
-            onChanged: (v) => setState(() => _selectedCounty = v!),
-            decoration: InputDecoration(labelText: tp.translate('county'), border: const OutlineInputBorder()),
-          ),
-          const SizedBox(height: 16),
-          CustomTextField(controller: TextEditingController(), label: widget.initialRole == 'agent' ? "Bureau Name" : "Physical Address", icon: Icons.home_work_rounded),
-        ],
-      );
+  Widget _buildCurrentStep() {
+    switch (_step) {
+      case 1: return _step1();
+      case 2: return _step2();
+      case 3: return _step3();
+      case 4: return _step4();
+      default: return const SizedBox();
     }
   }
 
-  Widget _buildUploads(ThemeProvider tp) {
+  // --- Step 1: Role Selection ---
+  Widget _step1() {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _uploadTile(tp.translate('id_required'), _idFront, () => _pickFile(true)),
+        const Text("How will you use Nyumbani?", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const SizedBox(height: 8),
+        const Text("Select the option that best describes you.", style: TextStyle(color: Colors.black54)),
+        const SizedBox(height: 32),
+        _roleCard(UserRole.worker, "House Manager", "Find trusted work in homes across Nairobi", Icons.home_rounded),
         const SizedBox(height: 16),
-        _uploadTile("Profile Picture", _profilePic, () => _pickFile(false)),
-        if (widget.initialRole == 'worker') ...[
-          const SizedBox(height: 16),
-          const Text("Portfolio Images (Work proof)", style: TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          InkWell(
-            onTap: () => _pickFile(false, multi: true),
-            child: Container(
-              height: 100,
-              decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(12)),
-              child: _portfolio.isEmpty 
-                ? const Center(child: Icon(Icons.add_a_photo_outlined))
-                : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: _portfolio.length,
-                    itemBuilder: (context, i) => Padding(padding: const EdgeInsets.all(4), child: Image.file(_portfolio[i], width: 80, fit: BoxFit.cover)),
-                  ),
-            ),
-          )
-        ],
+        _roleCard(UserRole.agent, "Agent / Employer", "Post jobs and find verified house managers", Icons.business_center_rounded),
+        const SizedBox(height: 48),
+        ElevatedButton(
+          onPressed: _selectedRole != null ? () => setState(() => _step = 2) : null,
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 56), 
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+          ),
+          child: const Text("Next →"),
+        ),
       ],
     );
   }
 
-  Widget _uploadTile(String label, File? file, VoidCallback onTap) {
+  Widget _roleCard(UserRole role, String title, String sub, IconData icon) {
+    bool isSelected = _selectedRole == role;
     return InkWell(
-      onTap: onTap,
+      onTap: () => setState(() => _selectedRole = role),
       child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(border: Border.all(color: AppColors.tertiaryOlive), borderRadius: BorderRadius.circular(16)),
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: isSelected ? const Color(0xFF1E293B) : Colors.black12, width: 2),
+        ),
         child: Row(
           children: [
-            Icon(file == null ? Icons.cloud_upload_outlined : Icons.check_circle, color: file == null ? Colors.grey : Colors.green),
+            Container(
+              padding: const EdgeInsets.all(12), 
+              decoration: BoxDecoration(
+                color: Colors.black12.withValues(alpha: 0.05), 
+                borderRadius: BorderRadius.circular(12)
+              ), 
+              child: Icon(icon, color: Colors.black54)
+            ),
             const SizedBox(width: 16),
-            Expanded(child: Text(label, style: const TextStyle(fontWeight: FontWeight.bold), overflow: TextOverflow.ellipsis)),
-            if (file != null) ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(file, width: 40, height: 40, fit: BoxFit.cover)),
+            Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(sub, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+            ])),
           ],
         ),
       ),
     );
   }
 
-  void _handleRegistration() async {
-    if (_idFront == null) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("ID Document is compulsory.")));
-      return;
-    }
-    setState(() => _isRegistering = true);
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() => _isRegistering = false);
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("Registration Successful"),
-          content: const Text("Your documents have been submitted for verification. You can now login."),
-          actions: [TextButton(onPressed: () => Navigator.popUntil(context, (r) => r.isFirst), child: const Text("OK"))],
+  // --- Step 2: Personal Info ---
+  Widget _step2() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const LinearProgressIndicator(value: 0.33),
+        const SizedBox(height: 32),
+        const Text("Personal Information", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const Text("Your information is safe and encrypted.", style: TextStyle(color: Colors.black54)),
+        const SizedBox(height: 32),
+        _fieldLabel("Full Name"),
+        TextField(controller: _nameController, decoration: const InputDecoration(hintText: "e.g. Amina Wanjiku")),
+        const SizedBox(height: 20),
+        _fieldLabel("Phone Number"),
+        TextField(controller: _phoneController, decoration: const InputDecoration(hintText: "+254 7XX XXX XXX")),
+        const SizedBox(height: 20),
+        _fieldLabel("Date of Birth"),
+        TextField(
+          controller: _dobController, 
+          decoration: const InputDecoration(hintText: "mm/dd/yyyy", suffixIcon: Icon(Icons.calendar_today)),
+          readOnly: true,
+          onTap: () async {
+            DateTime? picked = await showDatePicker(
+              context: context, 
+              firstDate: DateTime(1900), 
+              lastDate: DateTime.now(),
+              initialDate: DateTime.now().subtract(const Duration(days: 365 * 18)),
+            );
+            if (picked != null) {
+              setState(() {
+                _dobController.text = "${picked.month}/${picked.day}/${picked.year}";
+              });
+            }
+          },
         ),
-      );
-    }
+        const Text("You must be 18 years or older to register", style: TextStyle(color: Colors.black54, fontSize: 12)),
+        const SizedBox(height: 20),
+        _fieldLabel("Location in Nairobi"),
+        DropdownButtonFormField<String>(
+          value: _selectedArea,
+          items: ["Westlands", "Karen", "Kilimani", "Kasarani"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          onChanged: (v) => setState(() => _selectedArea = v),
+          decoration: const InputDecoration(hintText: "Select your area..."),
+        ),
+        const SizedBox(height: 48),
+        ElevatedButton(
+          onPressed: () => setState(() => _step = 3),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 56), 
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+          ),
+          child: const Text("Next →"),
+        ),
+      ],
+    );
+  }
+
+  // --- Step 3: National ID ---
+  Widget _step3() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const LinearProgressIndicator(value: 0.67),
+        const SizedBox(height: 32),
+        const Text("National ID", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const Text("Upload a clear photo of your Kenya National ID (front side)", style: TextStyle(color: Colors.black54)),
+        const SizedBox(height: 32),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(48),
+          decoration: BoxDecoration(
+            color: Colors.green.withValues(alpha: 0.05), 
+            borderRadius: BorderRadius.circular(16), 
+            border: Border.all(color: Colors.green.withValues(alpha: 0.2))
+          ),
+          child: Column(children: [
+            const CircleAvatar(backgroundColor: Colors.green, radius: 24, child: Icon(Icons.check, color: Colors.white)),
+            const SizedBox(height: 16),
+            const Text("ID uploaded successfully!", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+            const Text("Screenshot 2024-05-10.png", style: TextStyle(color: Colors.black38, fontSize: 12)),
+            TextButton(onPressed: () {}, child: const Text("Tap to change file")),
+          ]),
+        ),
+        const SizedBox(height: 20),
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(8)),
+          child: const Row(children: [
+            Icon(Icons.security, size: 16, color: Colors.blue),
+            SizedBox(width: 12),
+            Expanded(child: Text("Your ID is encrypted and stored securely.", style: TextStyle(fontSize: 12, color: Colors.black54))),
+          ]),
+        ),
+        const SizedBox(height: 48),
+        ElevatedButton(
+          onPressed: () => setState(() => _step = 4),
+          style: ElevatedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 56), 
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
+          ),
+          child: const Text("Next →"),
+        ),
+      ],
+    );
+  }
+
+  // --- Step 4: Profile ---
+  Widget _step4() {
+    final appState = Provider.of<AppState>(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const LinearProgressIndicator(value: 1.0),
+        const SizedBox(height: 32),
+        const Text("Profile", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const Text("Help employers know you better.", style: TextStyle(color: Colors.black54)),
+        const SizedBox(height: 32),
+        _fieldLabel("About Yourself"),
+        TextField(controller: _aboutController, maxLines: 4, decoration: const InputDecoration(hintText: "Tell employers a little about yourself...")),
+        const SizedBox(height: 20),
+        _fieldLabel("Skills"),
+        Wrap(
+          spacing: 8,
+          children: appState.availableSkills.map((s) => FilterChip(
+            label: Text(s),
+            selected: appState.tempSkills.contains(s),
+            onSelected: (_) => appState.toggleSkill(s),
+          )).toList(),
+        ),
+        const SizedBox(height: 20),
+        _fieldLabel("Years of Experience"),
+        TextField(controller: _expController, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: "0")),
+        const SizedBox(height: 48),
+        ElevatedButton(
+          onPressed: () {
+            if (_selectedRole == null) return;
+            appState.setRole(_selectedRole!);
+            appState.completeRegistration(
+              name: _nameController.text,
+              phone: _phoneController.text,
+              about: _aboutController.text,
+              skills: appState.tempSkills,
+              experience: int.tryParse(_expController.text) ?? 0,
+            );
+            Navigator.pushReplacement(
+              context, 
+              MaterialPageRoute(builder: (_) => _selectedRole == UserRole.worker ? const WorkerDashboard(workerName: "") : const AgentDashboard())
+            );
+          },
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF059669),
+            minimumSize: const Size(double.infinity, 56),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.check_circle_outline, color: Colors.white),
+              SizedBox(width: 8),
+              Text("Complete Registration", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _fieldLabel(String text) {
+    return Padding(padding: const EdgeInsets.only(bottom: 8), child: Text(text, style: const TextStyle(fontWeight: FontWeight.bold)));
   }
 }

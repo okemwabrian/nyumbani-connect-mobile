@@ -1,145 +1,163 @@
 import 'package:flutter/material.dart';
-import '../../utils/app_theme.dart';
-import '../../widgets/app_drawer.dart';
+import 'package:provider/provider.dart';
+import '../../providers/app_state.dart';
+import '../../widgets/nyumbani_layout.dart';
 
-class AgentDashboard extends StatefulWidget {
+class AgentDashboard extends StatelessWidget {
   const AgentDashboard({super.key});
 
   @override
-  State<AgentDashboard> createState() => _AgentDashboardState();
-}
-
-class _AgentDashboardState extends State<AgentDashboard> with SingleTickerProviderStateMixin {
-  late TabController _tabController;
-
-  final List<Map<String, dynamic>> _pendingWorkers = [
-    {"name": "Alice Korir", "id_uploaded": true, "skills": "Cooking, Elderly Care", "date": "2h ago"},
-    {"name": "John Maina", "id_uploaded": true, "skills": "Security", "date": "1d ago"},
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _tabController = TabController(length: 2, vsync: this);
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: const AppDrawer(role: "agent"),
-      appBar: AppBar(
-        title: const Text("Bureau Admin"),
-        bottom: TabBar(
-          controller: _tabController,
-          indicatorColor: AppColors.tertiaryOlive,
-          tabs: const [
-            Tab(text: "Verify Queue", icon: Icon(Icons.verified_user_rounded)),
-            Tab(text: "Job Matcher", icon: Icon(Icons.auto_awesome_rounded)),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildVerifyQueue(),
-          _buildJobMatcher(),
-        ],
-      ),
-    );
-  }
+    final appState = Provider.of<AppState>(context);
+    const Color gold = Color(0xFFFBBF24);
 
-  Widget _buildVerifyQueue() {
-    return ListView.builder(
-      padding: const EdgeInsets.all(24),
-      itemCount: _pendingWorkers.length,
-      itemBuilder: (context, index) {
-        final worker = _pendingWorkers[index];
-        return Card(
-          margin: const EdgeInsets.only(bottom: 16),
-          child: ExpansionTile(
-            leading: const CircleAvatar(backgroundColor: AppColors.bgSurface, child: Icon(Icons.person, color: AppColors.primaryTeal)),
-            title: Text(worker['name'], style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("Registered: ${worker['date']}"),
-            children: [
-              Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text("Automation: National ID Scanned", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                    const SizedBox(height: 8),
-                    Container(height: 100, width: double.infinity, color: AppColors.bgSurface, child: const Icon(Icons.badge_rounded, size: 50, color: AppColors.primaryTeal)),
-                    const SizedBox(height: 20),
-                    Row(
-                      children: [
-                        Expanded(child: OutlinedButton(onPressed: () {}, child: const Text("REJECT"))),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {},
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
-                            child: const Text("VERIFY ID"),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              )
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildJobMatcher() {
-    return ListView(
-      padding: const EdgeInsets.all(24),
-      children: [
-        const Text("Active Job Requests", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 16),
-        _matchCard("Nanny Needed", "Nairobi", "Mercy N."),
-        _matchCard("Professional Cook", "Kisumu", "Peter O."),
-      ],
-    );
-  }
-
-  Widget _matchCard(String title, String location, String employer) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+    return NyumbaniLayout(
+      title: "Agent Dashboard",
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(32),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            Text("📍 $location • From: $employer", style: const TextStyle(color: Colors.black54)),
-            const Divider(height: 32),
-            const Text("Smart Suggestions (Best Match):", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primaryTeal)),
-            const SizedBox(height: 12),
-            _suggestionItem("Mary Wanjiku", "98% Match"),
-            _suggestionItem("Jane Doe", "92% Match"),
-            const SizedBox(height: 16),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(onPressed: () {}, child: const Text("ALLOCATE WORKER")),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Text("Welcome back, ${appState.name ?? "User"}", 
+                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.front_hand_rounded, color: gold),
+                      ],
+                    ),
+                    const Text("Here's your bureau overview.", style: TextStyle(color: Colors.black54)),
+                  ],
+                ),
+                ElevatedButton.icon(
+                  onPressed: () {}, 
+                  icon: const Icon(Icons.add), 
+                  label: const Text("Post a Job"),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF1E293B),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 32),
+
+            // Stats Cards
+            Row(
+              children: const [
+                _AgentStatCard(label: "Active Jobs", value: "0", icon: Icons.work_outline),
+                const SizedBox(width: 24),
+                _AgentStatCard(label: "Total Applications", value: "0", icon: Icons.people_outline, color: Colors.blue),
+                const SizedBox(width: 24),
+                _AgentStatCard(label: "Shortlisted", value: "0", icon: Icons.check_circle_outline, color: Colors.green),
+              ],
+            ),
+            const SizedBox(height: 48),
+
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: _AgentCard(
+                    title: "My Job Posts",
+                    content: Column(
+                      children: [
+                        const SizedBox(height: 32),
+                        const Text("No jobs posted yet.", style: TextStyle(color: Colors.black38)),
+                        TextButton(onPressed: () {}, child: const Text("Post a Job")),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 24),
+                Expanded(
+                  flex: 1,
+                  child: _AgentCard(
+                    title: "Candidates",
+                    content: Column(
+                      children: const [
+                        SizedBox(height: 32),
+                        Text("No applications received yet.", style: TextStyle(color: Colors.black38)),
+                        SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _suggestionItem(String name, String match) {
-    return Row(
-      children: [
-        const Icon(Icons.check_circle_rounded, color: Colors.green, size: 16),
-        const SizedBox(width: 8),
-        Text(name, style: const TextStyle(fontSize: 14)),
-        const Spacer(),
-        Text(match, style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.secondarySage, fontSize: 12)),
-      ],
+class _AgentStatCard extends StatelessWidget {
+  final String label;
+  final String value;
+  final IconData icon;
+  final Color? color;
+
+  const _AgentStatCard({required this.label, required this.value, required this.icon, this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(24),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(color: (color ?? Colors.blue).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+              child: Icon(icon, color: color ?? Colors.blue, size: 20),
+            ),
+            const SizedBox(height: 16),
+            Text(value, style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold)),
+            Text(label, style: const TextStyle(color: Colors.black54, fontSize: 13)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _AgentCard extends StatelessWidget {
+  final String title;
+  final Widget content;
+
+  const _AgentCard({required this.title, required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.black12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Divider(height: 32),
+          content,
+        ],
+      ),
     );
   }
 }

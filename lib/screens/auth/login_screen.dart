@@ -27,6 +27,13 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isLoading = false;
   String _selectedRole = 'employer'; 
 
+  @override
+  void dispose() {
+    _identifierController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
   void _login() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -36,21 +43,25 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
+      // Simulate network delay
+      await Future.delayed(const Duration(seconds: 1));
       
       final result = await AuthService.login(identifier, password);
       
       if (!mounted) return;
 
       if (result != null) {
-        final role = result['role'] ?? _selectedRole;
-        final userPhone = result['phone'] ?? identifier;
-        final token = result['access'];
+        final String role = result['role'] ?? _selectedRole;
+        final String userPhone = result['phone'] ?? identifier;
+        final String? token = result['access'];
 
-        await SessionService.saveSession(token, role, userPhone);
+        if (token != null) {
+          await SessionService.saveSession(token, role, userPhone);
+        }
 
         if (!mounted) return;
 
+        // Fix: Call setSession which is defined in AppState
         Provider.of<AppState>(context, listen: false).setSession(role, userPhone);
 
         Widget nextScreen;
@@ -58,9 +69,6 @@ class _LoginScreenState extends State<LoginScreen> {
           nextScreen = WorkerNav(phone: userPhone);
         } else if (role == 'agent') {
           nextScreen = const AgentNav();
-        } else if (role == 'admin') {
-          // Placeholder for Admin Dashboard
-          nextScreen = EmployerNav(phone: userPhone);
         } else {
           nextScreen = EmployerNav(phone: userPhone);
         }
@@ -120,7 +128,11 @@ class _LoginScreenState extends State<LoginScreen> {
                 color: theme.colorScheme.surface.withValues(alpha: 0.95),
                 borderRadius: BorderRadius.circular(32),
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 20, offset: const Offset(0, 10))
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.2), 
+                    blurRadius: 20, 
+                    offset: const Offset(0, 10)
+                  )
                 ],
               ),
               child: Form(
@@ -182,9 +194,12 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     TextButton(
                       onPressed: () {
+                        // Fix: Navigate with correctly named parameter initialRole
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (_) => RegisterScreen(initialRole: _selectedRole))
+                          MaterialPageRoute(
+                            builder: (_) => RegisterScreen(initialRole: _selectedRole)
+                          )
                         );
                       },
                       child: Text(themeProvider.translate('no_account_action'), 
