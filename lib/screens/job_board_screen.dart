@@ -20,26 +20,27 @@ class JobBoardScreen extends StatelessWidget {
             const SizedBox(height: 32),
 
             // Search and Filters
-            Row(
+            Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              crossAxisAlignment: WrapCrossAlignment.center,
               children: [
-                Expanded(
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minWidth: 300, maxWidth: 500),
                   child: TextField(
                     decoration: InputDecoration(
                       prefixIcon: const Icon(Icons.search),
                       hintText: "Search jobs or location...",
                       fillColor: Colors.white,
+                      isDense: true,
                       border: OutlineInputBorder(borderRadius: BorderRadius.circular(8), borderSide: const BorderSide(color: Colors.black12)),
                     ),
                   ),
                 ),
-                const SizedBox(width: 16),
-                _FilterChip(label: "All", isActive: true),
-                const SizedBox(width: 8),
-                _FilterChip(label: "Live-In"),
-                const SizedBox(width: 8),
-                _FilterChip(label: "Live-Out"),
-                const SizedBox(width: 8),
-                _FilterChip(label: "Part-Time"),
+                const _FilterChip(label: "All", isActive: true),
+                const _FilterChip(label: "Live-In"),
+                const _FilterChip(label: "Live-Out"),
+                const _FilterChip(label: "Part-Time"),
               ],
             ),
             const SizedBox(height: 32),
@@ -150,11 +151,11 @@ class _JobCard extends StatelessWidget {
             children: [
               const Icon(Icons.location_on_outlined, size: 16, color: Colors.black54),
               const SizedBox(width: 4),
-              Text(location, style: const TextStyle(color: Colors.black54)),
+              Flexible(child: Text(location, style: const TextStyle(color: Colors.black54), overflow: TextOverflow.ellipsis)),
               const SizedBox(width: 24),
               const Icon(Icons.payments_outlined, size: 16, color: Colors.black54),
               const SizedBox(width: 4),
-              Text(salary, style: const TextStyle(color: Colors.black54)),
+              Flexible(child: Text(salary, style: const TextStyle(color: Colors.black54), overflow: TextOverflow.ellipsis)),
             ],
           ),
           const SizedBox(height: 16),

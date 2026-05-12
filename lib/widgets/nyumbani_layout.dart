@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/app_state.dart';
 import '../screens/welcome_screen.dart';
+import '../screens/job_board_screen.dart';
+import '../screens/common/profile_screen.dart';
 
 class NyumbaniLayout extends StatelessWidget {
   final Widget body;
@@ -11,19 +13,27 @@ class NyumbaniLayout extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final appState = Provider.of<AppState>(context);
     final isMobile = MediaQuery.of(context).size.width < 900;
 
     return Scaffold(
-      drawer: isMobile ? _Sidebar() : null,
-      appBar: isMobile ? AppBar(title: Text(title)) : null,
+      drawer: isMobile ? const Drawer(child: Sidebar()) : null,
+      appBar: isMobile ? AppBar(
+        title: Text(title),
+        backgroundColor: const Color(0xFF1E293B),
+        foregroundColor: Colors.white,
+      ) : null,
       body: Row(
         children: [
-          if (!isMobile) _Sidebar(),
+          if (!isMobile) const Sidebar(),
           Expanded(
             child: Container(
               color: const Color(0xFFF9FAFB),
-              child: body,
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1200),
+                  child: body,
+                ),
+              ),
             ),
           ),
         ],
@@ -32,12 +42,13 @@ class NyumbaniLayout extends StatelessWidget {
   }
 }
 
-class _Sidebar extends StatelessWidget {
+class Sidebar extends StatelessWidget {
+  const Sidebar({super.key});
+
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppState>(context);
     const Color navy = Color(0xFF1E293B);
-    const Color gold = Color(0xFFFBBF24);
 
     return Container(
       width: 280,
@@ -69,7 +80,7 @@ class _Sidebar extends StatelessWidget {
                 const CircleAvatar(
                   radius: 18,
                   backgroundColor: Colors.grey,
-                  child: Icon(Icons.person, color: Colors.white),
+                  child: Icon(Icons.person, color: Colors.white, size: 20),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -88,13 +99,41 @@ class _Sidebar extends StatelessWidget {
           ),
           const SizedBox(height: 40),
           // Navigation
-          _NavItem(icon: Icons.dashboard_rounded, label: "Dashboard", isActive: true),
-          _NavItem(icon: Icons.work_rounded, label: "Job Board"),
-          _NavItem(icon: Icons.assignment_rounded, label: "My Applications"),
-          _NavItem(icon: Icons.person_rounded, label: "Profile"),
+          NavItem(
+            icon: Icons.dashboard_rounded, 
+            label: "Dashboard", 
+            isActive: true,
+            onTap: () {
+              if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
+              // Already on dashboard? Just refresh or navigate
+            },
+          ),
+          NavItem(
+            icon: Icons.work_rounded, 
+            label: "Job Board",
+            onTap: () {
+              if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const JobBoardScreen()));
+            },
+          ),
+          NavItem(
+            icon: Icons.assignment_rounded, 
+            label: "My Applications",
+            onTap: () {
+              if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
+            },
+          ),
+          NavItem(
+            icon: Icons.person_rounded, 
+            label: "Profile",
+            onTap: () {
+              if (Scaffold.of(context).isDrawerOpen) Navigator.pop(context);
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen(role: "worker")));
+            },
+          ),
           const Spacer(),
-          _NavItem(icon: Icons.language, label: "Kiswahili"),
-          _NavItem(
+          const NavItem(icon: Icons.language, label: "Kiswahili"),
+          NavItem(
             icon: Icons.logout_rounded, 
             label: "Logout",
             onTap: () {
@@ -112,13 +151,13 @@ class _Sidebar extends StatelessWidget {
   }
 }
 
-class _NavItem extends StatelessWidget {
+class NavItem extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool isActive;
   final VoidCallback? onTap;
 
-  const _NavItem({required this.icon, required this.label, this.isActive = false, this.onTap});
+  const NavItem({super.key, required this.icon, required this.label, this.isActive = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {

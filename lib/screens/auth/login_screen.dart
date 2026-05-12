@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../utils/app_theme.dart';
-import '../../services/auth_service.dart';
-import '../../services/session_service.dart';
+import '../../services/firebase_auth_service.dart';
 import '../../providers/app_state.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/video_background.dart';
@@ -24,6 +23,7 @@ class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _identifierController = TextEditingController(); 
   final TextEditingController _passwordController = TextEditingController();
+  final FirebaseAuthService _authService = FirebaseAuthService();
   bool _isLoading = false;
   String _selectedRole = 'employer'; 
 
@@ -43,25 +43,14 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Simulate network delay
-      await Future.delayed(const Duration(seconds: 1));
-      
-      final result = await AuthService.login(identifier, password);
+      final user = await _authService.signInWithEmailAndPassword(identifier, password);
       
       if (!mounted) return;
 
-      if (result != null) {
-        final String role = result['role'] ?? _selectedRole;
-        final String userPhone = result['phone'] ?? identifier;
-        final String? token = result['access'];
+      if (user != null) {
+        final String role = user['role'] ?? _selectedRole;
+        final String userPhone = user['phone'] ?? identifier;
 
-        if (token != null) {
-          await SessionService.saveSession(token, role, userPhone);
-        }
-
-        if (!mounted) return;
-
-        // Fix: Call setSession which is defined in AppState
         Provider.of<AppState>(context, listen: false).setSession(role, userPhone);
 
         Widget nextScreen;
@@ -78,11 +67,9 @@ class _LoginScreenState extends State<LoginScreen> {
           MaterialPageRoute(builder: (_) => nextScreen),
           (route) => false,
         );
-      } else {
-        _showMessage("Invalid credentials. Please try again.", isError: true);
       }
     } catch (e) {
-      _showMessage("Login failed. Check your connection.", isError: true);
+      _showMessage(e.toString(), isError: true);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }

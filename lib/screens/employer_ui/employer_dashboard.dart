@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../../utils/app_theme.dart';
 import '../../utils/counties.dart';
 import '../../widgets/app_drawer.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/primary_button.dart';
 import '../common/chat_screen.dart';
+import '../../models/job_model.dart';
 
 class EmployerDashboard extends StatefulWidget {
   final String userName;
@@ -214,6 +217,7 @@ class _EmployerDashboardState extends State<EmployerDashboard> with SingleTicker
   void _showPostJobDialog() {
     final formKey = GlobalKey<FormState>();
     final title = TextEditingController();
+    final budget = TextEditingController();
     final desc = TextEditingController();
     String county = "Nairobi";
     bool loading = false;
@@ -234,6 +238,8 @@ class _EmployerDashboardState extends State<EmployerDashboard> with SingleTicker
                   const SizedBox(height: 20),
                   CustomTextField(controller: title, label: "Job Title", icon: Icons.work_outline, validator: (v) => v!.isEmpty ? "Required" : null),
                   const SizedBox(height: 16),
+                  CustomTextField(controller: budget, label: "Budget (e.g. KES 20k)", icon: Icons.payments_outlined, validator: (v) => v!.isEmpty ? "Required" : null),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     value: county, decoration: const InputDecoration(labelText: "Location County", border: OutlineInputBorder()),
                     items: counties.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
@@ -243,14 +249,41 @@ class _EmployerDashboardState extends State<EmployerDashboard> with SingleTicker
                   CustomTextField(controller: desc, label: "Full Description", icon: Icons.notes, validator: (v) => v!.isEmpty ? "Required" : null),
                   const SizedBox(height: 24),
                   PrimaryButton(
-                    label: "SUBMIT & NOTIFY AGENTS", isLoading: loading,
+                    label: "SUBMIT & POST LIVE", isLoading: loading,
                     onPressed: () async {
                       if (formKey.currentState!.validate()) {
                         setModalState(() => loading = true);
-                        await Future.delayed(const Duration(seconds: 2));
-                        if (mounted) {
-                          Navigator.pop(ctx);
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Job posted in $county!"), backgroundColor: AppColors.primaryTeal));
+                        try {
+                          final user = FirebaseAuth.instance.currentUser;
+                          final jobId = FirebaseFirestore.instance.collection('Jobs').doc().id;
+                          
+                          final job = JobModel(
+                            jobId: jobId,
+                            employerId: user?.uid ?? 'anonymous',
+                            employerName: widget.userName,
+                            title: title.text.trim(),
+                            description: desc.text.trim(),
+                            county: county,
+                            budget: budget.text.trim(),
+                            postedAt: DateTime.now(),
+                          );
+
+                          await FirebaseFirestore.instance.collection('Jobs').doc(jobId).set(job.toMap());
+
+                          if (mounted) {
+                            Navigator.pop(ctx);
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Job posted live to $county!"), backgroundColor: AppColors.primaryTeal)
+                            );
+                          }
+                        } catch (e) {
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Error: $e"), backgroundColor: Colors.redAccent)
+                            );
+                          }
+                        } finally {
+                          setModalState(() => loading = false);
                         }
                       }
                     },

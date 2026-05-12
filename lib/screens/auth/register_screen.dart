@@ -1,8 +1,16 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/app_state.dart';
+import '../../utils/counties.dart';
+import '../../services/firebase_auth_service.dart';
+import '../../services/firebase_storage_service.dart';
 import '../worker_ui/worker_dashboard.dart';
 import '../agent_ui/agent_dashboard.dart';
+import '../navigation/worker_nav.dart';
+import '../navigation/employer_nav.dart';
+import '../navigation/agent_nav.dart';
 
 class RegisterScreen extends StatefulWidget {
   final String? initialRole;
@@ -16,6 +24,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
   int _step = 1;
   UserRole? _selectedRole;
 
+  final FirebaseAuthService _authService = FirebaseAuthService();
+  final FirebaseStorageService _storageService = FirebaseStorageService();
+  final ImagePicker _picker = ImagePicker();
+  XFile? _idImage;
+  XFile? _profileImage;
+  bool _isUploading = false;
+  String? _uploadedImageUrl;
+  String? _uploadedProfileUrl;
+
   // Form Controllers
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -24,6 +41,99 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _expController = TextEditingController();
 
   String? _selectedArea;
+
+  Future<void> _pickImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _idImage = image;
+      });
+    }
+  }
+
+  Future<void> _pickProfileImage() async {
+    final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+    if (image != null) {
+      setState(() {
+        _profileImage = image;
+      });
+    }
+  }
+
+  void _handleRegistration() async {
+    if (_selectedRole == null) return;
+    
+    setState(() => _isUploading = true);
+
+    try {
+      // 1. Upload ID Image if exists
+      if (_idImage != null) {
+        _uploadedImageUrl = await _storageService.uploadImage(
+          File(_idImage!.path), 
+          'id_cards/${_phoneController.text.trim()}_id.jpg'
+        );
+      }
+
+      // 2. Upload Profile Image if exists
+      if (_profileImage != null) {
+        _uploadedProfileUrl = await _storageService.uploadImage(
+          File(_profileImage!.path), 
+          'profile_pics/${_phoneController.text.trim()}_profile.jpg'
+        );
+      }
+    
+      final error = await _authService.registerWithEmailAndPassword(
+        name: _nameController.text.trim(),
+        phone: _phoneController.text.trim(),
+        password: "password123", // Default password for now
+        role: _selectedRole.toString().split('.').last,
+        county: _selectedArea,
+        extraData: {
+          'about': _aboutController.text,
+          'skills': _userSkills,
+          'experience': int.tryParse(_expController.text) ?? 0,
+          'idImageUrl': _uploadedImageUrl,
+          'profileImageUrl': _uploadedProfileUrl,
+        }
+      );
+
+      if (!mounted) return;
+      setState(() => _isUploading = false);
+
+      if (error == null) {
+        final roleStr = _selectedRole.toString().split('.').last;
+        final userPhone = _phoneController.text.trim();
+        
+        Provider.of<AppState>(context, listen: false).setSession(roleStr, userPhone);
+
+        Widget nextScreen;
+        if (_selectedRole == UserRole.worker) {
+          nextScreen = WorkerNav(phone: userPhone);
+        } else if (_selectedRole == UserRole.agent) {
+          nextScreen = const AgentNav();
+        } else {
+          nextScreen = EmployerNav(phone: userPhone);
+        }
+
+        Navigator.pushAndRemoveUntil(
+          context, 
+          MaterialPageRoute(builder: (_) => nextScreen),
+          (route) => false,
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(error), backgroundColor: Colors.redAccent, behavior: SnackBarBehavior.floating),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUploading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Error during registration: $e"), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -39,6 +149,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
+  final _skillController = TextEditingController();
+  final List<String> _userSkills = [];
+
   @override
   void dispose() {
     _nameController.dispose();
@@ -46,6 +159,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
     _dobController.dispose();
     _aboutController.dispose();
     _expController.dispose();
+    _skillController.dispose();
     super.dispose();
   }
 
@@ -179,12 +293,16 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         const Text("You must be 18 years or older to register", style: TextStyle(color: Colors.black54, fontSize: 12)),
         const SizedBox(height: 20),
-        _fieldLabel("Location in Nairobi"),
+        _fieldLabel("Location in Kenya"),
         DropdownButtonFormField<String>(
           value: _selectedArea,
-          items: ["Westlands", "Karen", "Kilimani", "Kasarani"].map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+          items: counties.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
           onChanged: (v) => setState(() => _selectedArea = v),
-          decoration: const InputDecoration(hintText: "Select your area..."),
+          decoration: const InputDecoration(
+            hintText: "Select your county...",
+            border: OutlineInputBorder(),
+          ),
+          menuMaxHeight: 300,
         ),
         const SizedBox(height: 48),
         ElevatedButton(
@@ -206,38 +324,76 @@ class _RegisterScreenState extends State<RegisterScreen> {
       children: [
         const LinearProgressIndicator(value: 0.67),
         const SizedBox(height: 32),
-        const Text("National ID", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const Text("National ID Verification", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
         const Text("Upload a clear photo of your Kenya National ID (front side)", style: TextStyle(color: Colors.black54)),
         const SizedBox(height: 32),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(48),
-          decoration: BoxDecoration(
-            color: Colors.green.withValues(alpha: 0.05), 
-            borderRadius: BorderRadius.circular(16), 
-            border: Border.all(color: Colors.green.withValues(alpha: 0.2))
+        
+        InkWell(
+          onTap: _isUploading ? null : _pickImage,
+          child: Container(
+            width: double.infinity,
+            height: 200,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.black12, style: BorderStyle.solid),
+            ),
+            child: _idImage != null 
+              ? Stack(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(16),
+                      child: Image.file(File(_idImage!.path), width: double.infinity, height: 200, fit: BoxFit.cover),
+                    ),
+                    if (_isUploading)
+                      Container(
+                        color: Colors.black45,
+                        child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+                      )
+                    else
+                      Positioned(
+                        bottom: 8, right: 8,
+                        child: CircleAvatar(
+                          backgroundColor: Colors.green,
+                          radius: 16,
+                          child: Icon(Icons.check, color: Colors.white, size: 20),
+                        ),
+                      ),
+                  ],
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.add_a_photo_outlined, size: 48, color: Colors.black26),
+                    const SizedBox(height: 12),
+                    Text(_isUploading ? "Uploading..." : "Tap to upload ID Card", style: const TextStyle(color: Colors.black45)),
+                  ],
+                ),
           ),
-          child: Column(children: [
-            const CircleAvatar(backgroundColor: Colors.green, radius: 24, child: Icon(Icons.check, color: Colors.white)),
-            const SizedBox(height: 16),
-            const Text("ID uploaded successfully!", style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-            const Text("Screenshot 2024-05-10.png", style: TextStyle(color: Colors.black38, fontSize: 12)),
-            TextButton(onPressed: () {}, child: const Text("Tap to change file")),
-          ]),
         ),
-        const SizedBox(height: 20),
+        
+        if (_idImage != null && !_isUploading)
+          Center(
+            child: TextButton.icon(
+              onPressed: _pickImage,
+              icon: const Icon(Icons.refresh),
+              label: const Text("Replace Image"),
+            ),
+          ),
+          
+        const SizedBox(height: 24),
         Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(color: Colors.blue.withValues(alpha: 0.05), borderRadius: BorderRadius.circular(8)),
           child: const Row(children: [
             Icon(Icons.security, size: 16, color: Colors.blue),
             SizedBox(width: 12),
-            Expanded(child: Text("Your ID is encrypted and stored securely.", style: TextStyle(fontSize: 12, color: Colors.black54))),
+            Expanded(child: Text("Your ID is encrypted and stored securely for verification purposes only.", style: TextStyle(fontSize: 12, color: Colors.black54))),
           ]),
         ),
         const SizedBox(height: 48),
         ElevatedButton(
-          onPressed: () => setState(() => _step = 4),
+          onPressed: (_idImage != null && !_isUploading) ? () => setState(() => _step = 4) : null,
           style: ElevatedButton.styleFrom(
             minimumSize: const Size(double.infinity, 56), 
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))
@@ -250,60 +406,98 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   // --- Step 4: Profile ---
   Widget _step4() {
-    final appState = Provider.of<AppState>(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const LinearProgressIndicator(value: 1.0),
         const SizedBox(height: 32),
-        const Text("Profile", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-        const Text("Help employers know you better.", style: TextStyle(color: Colors.black54)),
+        const Text("Professional Profile", style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+        const Text("Showcase your skills and experience.", style: TextStyle(color: Colors.black54)),
         const SizedBox(height: 32),
+        
+        Center(
+          child: Stack(
+            children: [
+              CircleAvatar(
+                radius: 50,
+                backgroundColor: Colors.black12,
+                backgroundImage: _profileImage != null ? FileImage(File(_profileImage!.path)) : null,
+                child: _profileImage == null ? const Icon(Icons.person, size: 50, color: Colors.white) : null,
+              ),
+              Positioned(
+                bottom: 0, right: 0,
+                child: GestureDetector(
+                  onTap: _pickProfileImage,
+                  child: const CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Color(0xFF1D4ED8),
+                    child: Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        const Center(child: Text("Upload Profile Picture", style: TextStyle(color: Colors.black54, fontSize: 12))),
+        const SizedBox(height: 32),
+
         _fieldLabel("About Yourself"),
-        TextField(controller: _aboutController, maxLines: 4, decoration: const InputDecoration(hintText: "Tell employers a little about yourself...")),
+        TextField(controller: _aboutController, maxLines: 4, decoration: const InputDecoration(hintText: "Briefly describe your work history and strengths...", border: OutlineInputBorder())),
         const SizedBox(height: 20),
-        _fieldLabel("Skills"),
+        
+        _fieldLabel("Your Skills"),
+        const Text("Type a skill (e.g. Cooking) and press Enter", style: TextStyle(color: Colors.black45, fontSize: 12)),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _skillController,
+          decoration: const InputDecoration(
+            hintText: "Add a skill...",
+            suffixIcon: Icon(Icons.add),
+            border: OutlineInputBorder(),
+          ),
+          onSubmitted: (val) {
+            if (val.trim().isNotEmpty) {
+              setState(() {
+                _userSkills.add(val.trim());
+                _skillController.clear();
+              });
+            }
+          },
+        ),
+        const SizedBox(height: 12),
         Wrap(
           spacing: 8,
-          children: appState.availableSkills.map((s) => FilterChip(
-            label: Text(s),
-            selected: appState.tempSkills.contains(s),
-            onSelected: (_) => appState.toggleSkill(s),
+          runSpacing: 4,
+          children: _userSkills.map((skill) => Chip(
+            label: Text(skill),
+            onDeleted: () => setState(() => _userSkills.remove(skill)),
+            backgroundColor: const Color(0xFFECFDF5),
+            labelStyle: const TextStyle(color: Color(0xFF059669), fontWeight: FontWeight.bold),
+            deleteIconColor: Colors.redAccent,
           )).toList(),
         ),
+        
         const SizedBox(height: 20),
         _fieldLabel("Years of Experience"),
-        TextField(controller: _expController, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: "0")),
+        TextField(controller: _expController, keyboardType: TextInputType.number, decoration: const InputDecoration(hintText: "e.g. 5", border: OutlineInputBorder())),
         const SizedBox(height: 48),
         ElevatedButton(
-          onPressed: () {
-            if (_selectedRole == null) return;
-            appState.setRole(_selectedRole!);
-            appState.completeRegistration(
-              name: _nameController.text,
-              phone: _phoneController.text,
-              about: _aboutController.text,
-              skills: appState.tempSkills,
-              experience: int.tryParse(_expController.text) ?? 0,
-            );
-            Navigator.pushReplacement(
-              context, 
-              MaterialPageRoute(builder: (_) => _selectedRole == UserRole.worker ? const WorkerDashboard(workerName: "") : const AgentDashboard())
-            );
-          },
+          onPressed: _isUploading ? null : _handleRegistration,
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color(0xFF059669),
             minimumSize: const Size(double.infinity, 56),
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           ),
-          child: const Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.check_circle_outline, color: Colors.white),
-              SizedBox(width: 8),
-              Text("Complete Registration", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-            ],
-          ),
+          child: _isUploading 
+            ? const CircularProgressIndicator(color: Colors.white)
+            : const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.check_circle_outline, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text("Complete Registration", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+                ],
+              ),
         ),
       ],
     );

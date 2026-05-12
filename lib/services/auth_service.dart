@@ -1,56 +1,82 @@
 import 'dart:convert';
-import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  static const String baseUrl = "http://10.0.2.2:8000/api";
+  static final FirebaseAuth _auth = FirebaseAuth.instance;
+  static final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  // 🔐 Get headers with token
-  static Future<Map<String, String>> getHeaders() async {
-    final prefs = await SharedPreferences.getInstance();
-    final token = prefs.getString('token');
-
-    return {
-      "Content-Type": "application/json",
-      "Authorization": "Bearer $token",
-    };
-  }
-
-  // 🔹 LOGIN
+  // 🔹 LOGIN with Firebase
   static Future<Map<String, dynamic>?> login(String identifier, String password) async {
     try {
-      final response = await http.post(
-        Uri.parse("$baseUrl/login/"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "identifier": identifier,
-          "password": password,
-        }),
-      ).timeout(const Duration(seconds: 5));
+      // Using phone number as a virtual email for Firebase Auth
+      final String email = identifier.contains('@') ? identifier : "$identifier@nyumbani.com";
+      
+      UserCredential result = await _auth.signInWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
 
-      if (response.statusCode == 200) {
-        return jsonDecode(response.body);
+      if (result.user != null) {
+        // Fetch user role and details from Firestore
+        DocumentSnapshot userDoc = await _db.collection('Users').doc(result.user!.uid).get();
+        
+        if (userDoc.exists) {
+          final data = userDoc.data() as Map<String, dynamic>;
+          return {
+            "access": await result.user!.getIdToken(),
+            "role": data['role'],
+            "phone": data['phone'] ?? identifier,
+            "name": data['name'],
+          };
+        }
       }
     } catch (e) {
-      // Fallback for development/testing if backend is unreachable
-      print("AuthService: Using development fallback for login.");
+      print("Firebase Login Error: $e");
     }
-
-    // 🔥 DEVELOPMENT MOCK: Allow login with specific prefixes for testing
-    // To be removed when backend is fully ready
-    if (identifier.isNotEmpty && password.isNotEmpty) {
-      String role = "employer";
-      if (identifier.startsWith("1")) role = "worker";
-      if (identifier.startsWith("2")) role = "agent";
-
-      return {
-        "access": "mock_token_123",
-        "role": role,
-        "phone": identifier,
-      };
-    }
-
     return null;
+  }
+
+  // 🔹 REGISTER with Firebase
+  static Future<bool> register({
+    required String name,
+    required String phone,
+    required String password,
+    required String role,
+    Map<String, dynamic>? extraData,
+  }) async {
+    try {
+      final String email = "$phone@nyumbani.com";
+      
+      UserCredential result = await _auth.createUserWithEmailAndPassword(
+        email: email, 
+        password: password
+      );
+
+      if (result.user != null) {
+        // Create Firestore User Document
+        await _db.collection('Users').doc(result.user!.uid).set({
+          'uid': result.user!.uid,
+          'name': name,
+          'phone': phone,
+          'role': role,
+          'createdAt': FieldValue.serverTimestamp(),
+          ...?extraData,
+        });
+        return true;
+      }
+    } catch (e) {
+      print("Firebase Registration Error: $e");
+    }
+    return false;
+  }
+
+  // 🔹 LOGOUT
+  static Future<void> logout() async {
+    await _auth.signOut();
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
   }
 
   // 🔹 GET AVAILABLE WORKERS
